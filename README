@@ -1,0 +1,17 @@
+Voraussetzungen: 
+	- Auf dem Rechner muss Python3 installiert sein.
+	  Das Auführen mit Python statt Python3 führt zu einem Fehler
+	- Zur Durchsicht des Codes benötigt man einen Texteditor oder eine IDE
+
+Ausführen des Programms über die Konsole/CMD: 
+	- Ubuntu: Zum Verzeichnis navigieren in dem die Programmdateien liegen und "python3 controller.py" ausführen
+	- Windows: "C:\PfadZumInterpreter\python3.exe C:\PfadZumProgrammverzeichnis\controller.py" ausführen
+Ausführen des Programms als IntelliJ-Projekt: 
+	- Das Dateiverzeichnis in IntelliJ importieren 
+      Falls erforderlich eine neue Run Configuration mit dem Pfad zu controller.py als Script Path anlegen
+      Auführen 
+
+Erforderlicher Festplattenspeicher: 
+	- Das Programm sichert automatisch fünf Charaktermodelle beim ersten Programmstart (ca. 5 kB jeweils)
+	- Das Programm legt automatisch eine Logdatei an (Größe richtet sich nach Menge des Inhalts)
+	- Die Library Chatterbot legt automatisch ein Sprachmodell an und speichert es in der Datei db.sqlite3 (ca. 2 - 5 MB)
