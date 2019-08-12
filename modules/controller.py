@@ -3,7 +3,7 @@ from modules.bot import Bot
 from modules.character import Character
 from modules.classifier import Classifier
 from modules.character_manager import Character_Manager
-from modules.csv_mod import CsvTool
+from datasets_backup.clean import CsvTool
 import configparser
 import logging
 
