@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.optim as optim
-
+import os
 
 # Wenn ich hier ein NN aufbauen will, muss die Klasse von nn.Module erben
 # die methoden forward und num_flat_features kommen von der vererbung und müssen implementiert werden
@@ -41,6 +41,13 @@ netz = Torch_Test()
 netz.cuda()
 #print(netz)
 
+#gucke ob ich schin ein gespeichertes netz habe
+if os.path.isfile("dateiName.pt"):
+    netz = torch.load("dateiName.pt")
+    netz.cuda()
+else:
+
+
 # Variable baut aus einem Tensor eine variable
 # DIe lin1/lin2 erwarten eine Eingabegröße von 10 (d.h. ein Vektor). Man erstellt aber eine Matrix mit 10*10
 # Torch macht es dann automatisch so, dass es die Matrix zeilenweise nummt und alle Zeilen nacheinander ins Netz einspeist
@@ -70,3 +77,6 @@ for i in range(100):
     # parameter aus dem netz, lr=learning rate
     optimizer = optim.SGD(netz.parameters(), lr=0.05)
     optimizer.step()
+
+# Das Netz nach dem Durchlaufen speichern
+torch.save(netz, "dateiName.pt")
