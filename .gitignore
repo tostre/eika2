@@ -2,3 +2,5 @@ datasets/
 datasets_backup/
 datasets/*
 datasets_backup/*
+.idea/
+.idea/*
