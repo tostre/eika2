@@ -1,12 +1,15 @@
 import numpy as np
 import empath
-import random
 import torch
 import spacy
 import nltk
+import pandas as pd
+from modules.support.lin_all_tweet import Lin_Net_Tweet
+from modules.support.lin_all_emotion import Lin_Net_Emotion
 
 
 class Classifier:
+
     def __init__(self, topic_keywords):
         self.lexicon = empath.Empath()
         self.keyword_analysis = []
@@ -15,12 +18,38 @@ class Classifier:
         self.nlp = spacy.load("en_core_web_lg")
         self.emotion_mapping = {"happiness": 0, "sadness": 1, "anger": 2, "fear": 3}
         self.stemmer = nltk.stem.SnowballStemmer('english')
-        self.net_lin = torch.load("example")
 
-    # TODO die methode fertig machen
-    # searches for features in user input
+        # load neural networks
+        self.net_lin_all_tweet = Lin_Net_Tweet()
+        self.net_lin_all_tweet.load_state_dict(torch.load("../nets/lin_all_tweet.pt"))
+        self.net_lin_all_emo = Lin_Net_Emotion()
+        self.net_lin_all_emo.load_state_dict(torch.load("../nets/lin_all_emotion.pt"))
+
+        # load emotion lexica
+        self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_sadness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_anger = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_fear = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        # turn them into lists
+        self.list_happiness = self.lex_happiness["stems"].tolist()
+        self.list_sadness = self.lex_sadness["stems"].tolist()
+        self.list_anger = pd.Series(self.lex_anger["stems"].tolist())
+        self.list_fear = self.lex_fear["stems"].tolist()
+
+        # init variables for extracting features from user input
+        self.doc = None
+        self.stemmed_input = None
+        self.word_count = 0
+        self.upper_word_count = 0
+        self.ent_word_count = 0
+        self.cons_punct_count = 0
+        self.features = []
+        self.lex_words = []
+        self.all_features = []
+        self.emotions = None
+
+    # searches for features in user input (word count, upper word count, etc)
     def get_input_features(self, user_input):
-        # word_count, upper_word_count, ent_word_count, cons_punct_count
         self.doc = self.nlp(user_input)
         self.word_count = len(self.doc)
         self.upper_word_count = sum([token.text.isupper() for token in self.doc]) / len(self.doc)
@@ -51,50 +80,46 @@ class Classifier:
 
         return [self.word_count, self.upper_word_count, self.ent_word_count, self.cons_punct_count]
 
-    # TODO die methode fertig machen
     # get_input_lexicon_words
     def get_input_lexicon_words(self, user_input):
-        h, s, a, f = 0
-        h_count, s_count, a_count, f_count = 0
+        # stem the user input
         self.doc = self.nlp(user_input)
-        stems = []
-        stems = [self.stemmer.stem(token.text) for token in self.doc]
+        self.stemmed_input = [self.stemmer.stem(token.text) for token in self.doc]
+        # count the occurances of words from lexica
+        h, s, a, f = 0, 0, 0, 0
 
-        # load lexica # # # # # # #
-
-        for item in stems:
-            if item in self.list_happiness:
+        for word in self.stemmed_input:
+            if word in self.list_happiness:
                 h += 1
-            elif item in self.list_sadness:
+            elif word in self.list_sadness:
                 s += 1
-            elif item in self.list_anger:
+            elif word in self.list_anger:
                 a += 1
-            elif item in self.list_fear:
+            elif word in self.list_fear:
                 f += 1
 
-        h_count = (h / len(self.doc))
-        s_count = (s / len(self.doc))
-        a_count = (a / len(self.doc))
-        f_count = (f / len(self.doc))
+        # return normalized number of lexicon words
+        return [(h / len(self.doc)), (s / len(self.doc)), (a / len(self.doc)), (f / len(self.doc))]
 
-        return [h_count, s_count, a_count, f_count]
-
-    # analyzes and returns general sentiment of the input
-    def get_sentiment(self):
-        pass
-
-    # TODO die methode so erweitern, dass sie den user input durch das netz jagt (netz am besten
-    # im konstruktor der methode schon laden
-    # atm returns a list of random generated emotion values
+    # runs user input through neural net and returns detected emotions
     def get_emotions(self, user_message):
-        self.net_in = torch.Tensor(user_message)
-        self.output = self.net_lin(self.net_in)
+        # create different feature vectors
+        self.features = self.get_input_features(user_message)
+        self.lex_words = self.get_input_lexicon_words(user_message)
+        self.all_features = [self.features[0], self.features[1], self.features[2], self.lex_words[0], self.lex_words[1], self.lex_words[2], self.lex_words[3], self.features[3]]
+
+        # run input through net and round them
+        self.emotions = self.net_lin_all_tweet(torch.Tensor(self.all_features)).tolist()
+        # add disgust value to ouput (net does not give out disgust value)
+        self.emotions.append(0)
+        for index, value in enumerate(self.emotions):
+            self.emotions[index] = round(value, 3)
 
         if user_message == "h" or user_message == "s" or user_message == "a" or user_message == "f" or user_message == "d" or user_message == "n":
             return self.get_emotions_debug(user_message)
         else:
             return {
-                "input_emotions": np.round(np.random.rand(5), 3),
+                "input_emotions": np.asarray(self.emotions),
                 "input_topics": self.get_topics(user_message),
             }
 

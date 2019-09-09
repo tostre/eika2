@@ -23,7 +23,7 @@ class Character_Manager:
             "dislike": 0.3
         }
 
-        np.savez("characters/" + file,
+        np.savez("../characters/" + file,
                  trait_values=self.trait_values,
                  max_values=self.max_values,
                  emotional_state=self.emotional_state,

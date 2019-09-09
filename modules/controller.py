@@ -3,7 +3,6 @@ from modules.bot import Bot
 from modules.character import Character
 from modules.classifier import Classifier
 from modules.character_manager import Character_Manager
-from datasets_backup.clean import CsvTool
 import configparser
 import logging
 
@@ -22,16 +21,13 @@ class Controller:
         cm.save("character_irascible")
 
         # set up logging
-        logging.basicConfig(level=logging.INFO, filename='logs/app.log', filemode="w", format='%(asctime)s %(name)s/%(levelname)s - - %(message)s', datefmt='%d.%m.%y %H:%M:%S')
+        logging.basicConfig(level=logging.INFO, filename='../logs/app.log', filemode="w", format='%(asctime)s %(name)s/%(levelname)s - - %(message)s', datefmt='%d.%m.%y %H:%M:%S')
         self.logger = logging.getLogger("controller")
         self.logger.setLevel(logging.INFO)
 
-        # csv_handling
-        self.csv = CsvTool()
-
         # read config file and save values in variables
         self.config = configparser.ConfigParser()
-        self.config.read("config/config.ini")
+        self.config.read("../config/config.ini")
         self.botname = self.config.get("default", "botname")
         self.username = self.config.get("default", "username")
 
@@ -90,12 +86,11 @@ class Controller:
     def handle_input(self, user_message):
         # update all modules
         self.ml_package = self.classifier.get_emotions(user_message)
-        print("ml_package", self.ml_package)
         self.response_package = self.bot.respond(user_message)
         self.state_package = self.character.update_emotional_state(self.ml_package.get("input_emotions"))
         # update gui
         self.frame.update_chat_out(user_message, self.response_package.get("response").__str__())
-        self.frame.update_log([self.state_package, self.response_package])
+        self.frame.update_log([self.ml_package, self.state_package, self.response_package])
         self.frame.update_diagrams(self.state_package.get("emotional_state"), self.state_package.get("emotional_history"))
 
     # handles saving data when closing the program
@@ -106,7 +101,7 @@ class Controller:
         # set the first launch variable to false
         self.config.set("default", "firstlaunch", "NO")
         # save new value in file
-        with open("config/config.ini", "w") as f:
+        with open("../config/config.ini", "w") as f:
             self.config.write(f)
 
 

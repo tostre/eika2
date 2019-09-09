@@ -32,7 +32,7 @@ class Character:
         self.np_load_old = np.load
         np.load = lambda *a, **k: self.np_load_old(*a, allow_pickle=True, **k)
         # load characters and values
-        self.character_npz = np.load("characters/" + file + ".npz")
+        self.character_npz = np.load("../characters/" + file + ".npz")
         self.trait_values = self.character_npz.get("trait_values")
         self.max_values = self.character_npz.get("max_values")
         self.emotional_state = self.character_npz.get("emotional_state")
@@ -52,7 +52,7 @@ class Character:
 
     # saves the current character in a npz file
     def save(self):
-        np.savez("characters/character_saved",
+        np.savez("../characters/character_saved",
                  trait_values=self.trait_values,
                  max_values=self.max_values,
                  emotional_state=self.emotional_state,
