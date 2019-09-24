@@ -17,13 +17,13 @@ class Frame:
         self.user_input = None
 
         # initialize all ui elements
-
         self.dgm = DiagramManager(init_emotional_state, init_emotional_history)
         self.root = tk.Tk()
         self.menubar = tk.Menu()
         self.file_menu = tk.Menu(tearoff=0)
         self.chatbot_menu = tk.Menu(tearoff=0)
         self.datasets_menu = tk.Menu(tearoff=0)
+        self.network_change_menu = tk.Menu(tearoff=0)
         self.load_menu = tk.Menu(tearoff=0)
         self.response_menu = tk.Menu(tearoff=0)
         self.chat_out = tk.Text(self.root, width=40, state="disabled")
@@ -53,12 +53,14 @@ class Frame:
         self.load_menu.add_command(label="Load stable character", command=lambda: self.forward_user_intent(intent="load_character", character="character_stable"))
         self.load_menu.add_command(label="Load empathetic character", command=lambda: self.forward_user_intent(intent="load_character", character="character_empathetic"))
         self.load_menu.add_command(label="Load irascible character", command=lambda: self.forward_user_intent(intent="load_character", character="character_irascible"))
+        self.file_menu.add_cascade(label="Load network", menu=self.network_change_menu)
+        self.network_change_menu.add_command(label="FC, Emotion dataset, all features", command=lambda: self.forward_user_intent(intent="change_network", network="net_lin_emotion_all"))
+        self.network_change_menu.add_command(label="FC, Tweet dataset, all features", command=lambda: self.forward_user_intent(intent="change_network", network="net_lin_tweet_all"))
+        self.network_change_menu.add_command(label="LSTM+FC, Emotion dataset, all features", command=lambda: self.forward_user_intent(intent="change_network", network="net_rnn_emotion"))
+        self.network_change_menu.add_command(label="LSTM+FC, Tweet dataset, all features", command=lambda: self.forward_user_intent(intent="change_network", network="net_rnn_tweet"))
         # create debug menu
         self.chatbot_menu.add_command(label="Retrain chatbot", command=lambda: self.forward_user_intent(intent="retrain_bot"))
         self.chatbot_menu.add_command(label="Reset chatbot", command=lambda: self.forward_user_intent(intent="reset_state"))
-        # create dataset menu
-        self.datasets_menu.add_command(label="Process corpora", command=lambda: self.forward_user_intent(intent="process_corpora"))
-        self.datasets_menu.add_command(label="Process lexica", command=lambda: self.forward_user_intent(intent="process_lexica"))
         # configure frame
         self.root.configure(menu=self.menubar)
         self.root.title(title)
@@ -76,8 +78,8 @@ class Frame:
         self.diagram_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
     # forwards user interaction with the gui to the controller
-    def forward_user_intent(self, intent, user_input=None, character=None):
-        self.controller.handle_intent(intent=intent, input_message=user_input, character=character)
+    def forward_user_intent(self, intent, user_input=None, character=None, network=None):
+        self.controller.handle_intent(intent=intent, input_message=user_input, character=character, network=network)
 
     # prints in chatout widget
     def update_chat_out(self, user_input, response):

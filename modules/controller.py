@@ -30,6 +30,7 @@ class Controller:
         self.config.read("../config/config.ini")
         self.botname = self.config.get("default", "botname")
         self.username = self.config.get("default", "username")
+        self.network_name = self.config.get("net", "network")
 
         # initialize chat variables
         self.ml_package = {}
@@ -45,7 +46,7 @@ class Controller:
 
         # create bot, responsible for generating answers and classifier, for analysing the input
         self.character = Character(self.config.getboolean("default", "firstlaunch"))
-        self.classifier = Classifier(self.topic_keywords)
+        self.classifier = Classifier(self.topic_keywords, self.network_name)
         self.bot = Bot()
 
         # create frame and update widgets with initial values
@@ -58,8 +59,7 @@ class Controller:
         logging.shutdown()
 
     # takes the users intent (per gui interaction) and starts the corresponding methods
-    def handle_intent(self, intent, input_message=None, character=None):
-        print("intent", intent)
+    def handle_intent(self, intent, input_message=None, character=None, network=None):
         if intent == "load_character":
             self.character.load(character)
             self.frame.update_diagrams(self.character.get_emotional_state(), self.character.get_emotional_history())
@@ -81,6 +81,9 @@ class Controller:
             self.csv.cleanup_datasets(self.csv.get_list_of_lexica())
             self.csv.save_features_in_datasets(self.csv.get_list_of_lexica(), True)
             self.csv.merge_datasets(self.csv.get_list_of_lexica(), True)
+        elif intent == "change_network":
+            self.classifier.load_network(network)
+            self.network_name = network
 
     # take user input, generate new data an update ui
     def handle_input(self, user_message):
@@ -90,7 +93,7 @@ class Controller:
         self.state_package = self.character.update_emotional_state(self.ml_package.get("input_emotions"))
         # update gui
         self.frame.update_chat_out(user_message, self.response_package.get("response").__str__())
-        self.frame.update_log([self.ml_package, self.state_package, self.response_package])
+        self.frame.update_log([("network: " + self.network_name), self.ml_package, self.state_package, self.response_package])
         self.frame.update_diagrams(self.state_package.get("emotional_state"), self.state_package.get("emotional_history"))
 
     # handles saving data when closing the program
@@ -100,6 +103,7 @@ class Controller:
 
         # set the first launch variable to false
         self.config.set("default", "firstlaunch", "NO")
+        self.config.set("net", "network", self.network_name)
         # save new value in file
         with open("../config/config.ini", "w") as f:
             self.config.write(f)
