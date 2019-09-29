@@ -89,7 +89,7 @@ class Controller:
     def handle_input(self, user_message):
         # update all modules
         self.ml_package = self.classifier.get_emotions(user_message)
-        self.response_package = self.bot.respond(user_message)
+        self.response_package = self.bot.respond(user_message, self.ml_package["replace_words"])
         self.state_package = self.character.update_emotional_state(self.ml_package.get("input_emotions"))
         # update gui
         self.frame.update_chat_out(user_message, self.response_package.get("response").__str__())

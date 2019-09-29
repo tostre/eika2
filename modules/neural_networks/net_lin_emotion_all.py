@@ -7,14 +7,12 @@ class Net_Lin_Emotion_All(nn.Module):
     def __init__(self):
         # initiate layers
         super(Net_Lin_Emotion_All, self).__init__()
-        self.lin1 = nn.Linear(8, 16)
-        self.lin3 = nn.Linear(16, 16)
-        self.lin2 = nn.Linear(16, 4)
+        self.lin1 = nn.Linear(8, 8)
+        self.lin2 = nn.Linear(8, 4)
 
     def forward(self, x):
         # define forward pass
         x = F.relu(self.lin1(x))
-        x = F.relu(self.lin3(x))
         x = self.lin2(x)
         return x
 

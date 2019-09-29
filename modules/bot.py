@@ -29,11 +29,15 @@ class Bot:
         return "Training complete"
 
     # returns chatbot response, with some additional data
-    def respond(self, user_message):
+    def respond(self, user_message, replace_words):
         if user_message == "h" or user_message == "s" or user_message == "a" or user_message == "f" or user_message == "d" or user_message == "n":
             return self.respond_debug(user_message)
         else:
             self.response = self.bot.get_response(user_message)
+            # replace certain words with synonyms
+            for key, synonym in replace_words.items():
+                return self.response.replace(key, synonym)
+
             self.response_package = {
                 "response": self.response,
                 "response_confidence": self.response.confidence
@@ -72,3 +76,5 @@ class Bot:
                 "response": "Debug input: n",
                 "response_confidence": 100
             }
+
+# @todo die mthide zum synonym-finden hierher verschienen, dann gucken, dass man oben bei der replace-methode den text rausbekommt und nicht das statement
