@@ -5,6 +5,8 @@ from modules.classifier import Classifier
 from modules.character_manager import Character_Manager
 import configparser
 import logging
+import pandas as pd
+import numpy as np
 
 
 # controller
@@ -14,6 +16,7 @@ class Controller:
     def __init__(self):
 
         # create default personalities
+        print("loading characters")
         cm = Character_Manager()
         cm.save("character_default")
         cm.save("character_stable")
@@ -26,6 +29,7 @@ class Controller:
         self.logger.setLevel(logging.INFO)
 
         # read config file and save values in variables
+        print("loading config")
         self.config = configparser.ConfigParser()
         self.config.read("../config/config.ini")
         self.botname = self.config.get("default", "botname")
@@ -39,6 +43,15 @@ class Controller:
         self.log_message = []
 
         # initialize emotional variables
+        print("loading lexica")
+        self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_sadness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_anger = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_fear = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.list_happiness = self.lex_happiness["stems"].tolist()
+        self.list_sadness = self.lex_sadness["stems"].tolist()
+        self.list_anger = pd.Series(self.lex_anger["stems"].tolist())
+        self.list_fear = self.lex_fear["stems"].tolist()
         self.emotions = ["happiness", "sadness", "anger", "fear", "disgust"]
         self.topic_keywords = ["joy", "sadness", "anger", "fear", "disgust"]
         self.topic_keywords_pos_sentiment = ["positive_emotion", "optimism", "affection", "cheerfulness", "politeness", "love", "attractive"]
@@ -46,10 +59,11 @@ class Controller:
 
         # create bot, responsible for generating answers and classifier, for analysing the input
         self.character = Character(self.config.getboolean("default", "firstlaunch"))
-        self.classifier = Classifier(self.topic_keywords, self.network_name)
-        self.bot = Bot()
+        self.classifier = Classifier(self.topic_keywords, self.network_name, self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger, self.list_fear)
+        self.bot = Bot(self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger, self.list_fear)
 
         # create frame and update widgets with initial values
+        print("initialising gui")
         self.frame = Frame(self.botname, self.username, self.character.get_emotional_state(), self.character.get_emotional_history())
         self.frame.register_subscriber(self)
         self.frame.show()
@@ -89,8 +103,10 @@ class Controller:
     def handle_input(self, user_message):
         # update all modules
         self.ml_package = self.classifier.get_emotions(user_message)
-        self.response_package = self.bot.respond(user_message, self.ml_package["replace_words"])
+        self.response_package = self.bot.respond(user_message)
         self.state_package = self.character.update_emotional_state(self.ml_package.get("input_emotions"))
+        self.response_package = self.bot.get_synonyms(self.response_package, self.state_package["highest emotion"], self.state_package["highest_score"])
+
         # update gui
         self.frame.update_chat_out(user_message, self.response_package.get("response").__str__())
         self.frame.update_log([("network: " + self.network_name), self.ml_package, self.state_package, self.response_package])

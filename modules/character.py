@@ -96,7 +96,11 @@ class Character:
         self.emotional_state = self.clean_state(self.emotional_state)
         self.emotional_history = np.insert(self.emotional_history[0:-1], 0, self.emotional_state, 0)
 
-        return {"emotional_state": self.emotional_state, "emotional_history": self.emotional_history}
+        return {
+            "emotional_state": self.emotional_state,
+            "emotional_history": self.emotional_history,
+            "highest emotion": np.argmax(self.emotional_state),
+            "highest_score": max(self.emotional_state)}
 
     # Returns value of modifier based on the interaction function between two emotions
     def get_empathy_modifier(self, input_emotions, emotion):

@@ -14,15 +14,15 @@ from modules.neural_networks.net_rnn_tweet import Net_Rnn_Tweet
 
 class Classifier:
 
-    def __init__(self, topic_keywords, network):
+    def __init__(self, topic_keywords, network, lex_happiness, lex_sadness, lex_anger, lex_fear, list_happiness, list_sadness, list_anger, list_fear):
         self.pos_encoding = {84.0: 1, 85.0: 2, 86.0: 3, 87.0: 4, 89.0: 5, 90.0: 6, 91.0: 7, 92.0: 8, 93.0: 9,
                              94.0: 10, 95.0: 11, 96.0: 12, 97.0: 13, 99.0: 14, 100.0: 15, 101.0: 16, 03.0: 17, np.nan: 18}
 
+        self.nlp = spacy.load("en_core_web_lg")
         self.lexicon = empath.Empath()
         self.keyword_analysis = []
         self.topic_keywords = topic_keywords
         self.topics_set = None
-        self.nlp = spacy.load("en_core_web_lg")
         self.emotion_mapping = {"happiness": 0, "sadness": 1, "anger": 2, "fear": 3}
         self.stemmer = nltk.stem.SnowballStemmer('english')
         # load network
@@ -30,16 +30,15 @@ class Classifier:
         self.network_name = network
         self.network = None
         self.load_network(network)
-        # load emotion lexica
-        self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_sadness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_anger = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_fear = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        # turn them into lists
-        self.list_happiness = self.lex_happiness["stems"].tolist()
-        self.list_sadness = self.lex_sadness["stems"].tolist()
-        self.list_anger = pd.Series(self.lex_anger["stems"].tolist())
-        self.list_fear = self.lex_fear["stems"].tolist()
+        # assign emotion lexica
+        self.lex_happiness = lex_happiness
+        self.lex_sadness = lex_sadness
+        self.lex_anger = lex_anger
+        self.lex_fear = lex_fear
+        self.list_happiness = list_happiness
+        self.list_sadness = list_sadness
+        self.list_anger = list_anger
+        self.list_fear = list_fear
         # init variables for extracting features from user input
         self.spell = SpellChecker()
         self.corrected = []
@@ -182,14 +181,10 @@ class Classifier:
             for index, value in enumerate(self.emotions):
                 self.emotions[index] = round(value, 3)
 
-            self.replace_words = self.get_synonyms(self.user_message, self.highest_emotion, self.highest_emotion_score)
-            print(self.user_message)
-
             # return emotion package (emotions and topics)
             return {
                 "input_emotions": np.asarray(self.emotions),
-                "input_topics": self.get_topics(self.user_message),
-                "replace_words": self.replace_words
+                "input_topics": self.get_topics(self.user_message)
             }
 
     # get debug-emotion-values
