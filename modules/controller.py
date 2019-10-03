@@ -6,7 +6,8 @@ from modules.character_manager import Character_Manager
 import configparser
 import logging
 import pandas as pd
-import numpy as np
+import spacy
+from spellchecker import SpellChecker
 
 
 # controller
@@ -45,22 +46,32 @@ class Controller:
         # initialize emotional variables
         print("loading lexica")
         self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_sadness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_anger = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_fear = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_sadness = pd.read_csv("../lexica/clean_sadness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_anger = pd.read_csv("../lexica/clean_anger.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_fear = pd.read_csv("../lexica/clean_fear.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
         self.list_happiness = self.lex_happiness["stems"].tolist()
         self.list_sadness = self.lex_sadness["stems"].tolist()
         self.list_anger = pd.Series(self.lex_anger["stems"].tolist())
         self.list_fear = self.lex_fear["stems"].tolist()
+        self.lex_happiness_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float})
+        self.lex_sadness_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float})
+        self.lex_anger_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float})
+        self.lex_fear_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float})
         self.emotions = ["happiness", "sadness", "anger", "fear", "disgust"]
         self.topic_keywords = ["joy", "sadness", "anger", "fear", "disgust"]
         self.topic_keywords_pos_sentiment = ["positive_emotion", "optimism", "affection", "cheerfulness", "politeness", "love", "attractive"]
         self.topic_keywords_neg_sentiment = ["cold", "swearing_terms", "disappointment", "pain", "neglect", "suffering", "negative_emotion", "hate", "rage"]
 
+        # initialize ml-variables
+        self.nlp = spacy.load("en_core_web_lg")
+        self.spell = SpellChecker()
+
         # create bot, responsible for generating answers and classifier, for analysing the input
         self.character = Character(self.config.getboolean("default", "firstlaunch"))
-        self.classifier = Classifier(self.topic_keywords, self.network_name, self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger, self.list_fear)
-        self.bot = Bot(self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger, self.list_fear)
+        self.classifier = Classifier(self.topic_keywords, self.network_name, self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness,
+                                     self.list_anger, self.list_fear, self.nlp)
+        self.bot = Bot(self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger,
+                       self.list_fear, self.lex_happiness_adj, self.lex_sadness_adj, self.lex_anger_adj, self.lex_fear_adj, self.nlp)
 
         # create frame and update widgets with initial values
         print("initialising gui")
@@ -100,17 +111,30 @@ class Controller:
             self.network_name = network
 
     # take user input, generate new data an update ui
-    def handle_input(self, user_message):
+    def handle_input(self, user_input):
+        user_input = self.correct_input(user_input)
         # update all modules
-        self.ml_package = self.classifier.get_emotions(user_message)
-        self.response_package = self.bot.respond(user_message)
+        self.ml_package = self.classifier.get_emotions(user_input)
+        self.response_package = self.bot.respond(user_input)
         self.state_package = self.character.update_emotional_state(self.ml_package.get("input_emotions"))
-        self.response_package = self.bot.get_synonyms(self.response_package, self.state_package["highest emotion"], self.state_package["highest_score"])
+        self.response_package = self.bot.modify_output(self.response_package, self.state_package["highest emotion"], self.state_package["highest_score"])
 
         # update gui
-        self.frame.update_chat_out(user_message, self.response_package.get("response").__str__())
+        self.frame.update_chat_out(user_input, self.response_package.get("response").__str__())
         self.frame.update_log([("network: " + self.network_name), self.ml_package, self.state_package, self.response_package])
         self.frame.update_diagrams(self.state_package.get("emotional_state"), self.state_package.get("emotional_history"))
+
+    # corrects user input
+    def correct_input(self, user_input):
+        # make list of all words
+        words = user_input.split(" ")
+        unknown_words = self.spell.unknown(words)
+        # replace all unknown words
+        for word in unknown_words:
+            print("correction: ", word, self.spell.correction(word))
+            user_input = user_input.replace(word, self.spell.correction(word))
+
+        return user_input
 
     # handles saving data when closing the program
     def save_session(self):

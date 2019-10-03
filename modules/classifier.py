@@ -1,11 +1,7 @@
 import numpy as np
 import empath
 import torch
-import spacy
 import nltk
-import pandas as pd
-from spellchecker import SpellChecker
-from nltk.corpus import wordnet
 from modules.neural_networks.net_lin_emotion_all import Net_Lin_Emotion_All
 from modules.neural_networks.net_lin_tweet_all import Net_Lin_Tweet_All
 from modules.neural_networks.net_rnn_emotion import Net_Rnn_Emotion
@@ -14,11 +10,11 @@ from modules.neural_networks.net_rnn_tweet import Net_Rnn_Tweet
 
 class Classifier:
 
-    def __init__(self, topic_keywords, network, lex_happiness, lex_sadness, lex_anger, lex_fear, list_happiness, list_sadness, list_anger, list_fear):
+    def __init__(self, topic_keywords, network, lex_happiness, lex_sadness, lex_anger, lex_fear, list_happiness, list_sadness, list_anger, list_fear, nlp):
         self.pos_encoding = {84.0: 1, 85.0: 2, 86.0: 3, 87.0: 4, 89.0: 5, 90.0: 6, 91.0: 7, 92.0: 8, 93.0: 9,
                              94.0: 10, 95.0: 11, 96.0: 12, 97.0: 13, 99.0: 14, 100.0: 15, 101.0: 16, 03.0: 17, np.nan: 18}
 
-        self.nlp = spacy.load("en_core_web_lg")
+        self.nlp = nlp
         self.lexicon = empath.Empath()
         self.keyword_analysis = []
         self.topic_keywords = topic_keywords
@@ -40,7 +36,6 @@ class Classifier:
         self.list_anger = list_anger
         self.list_fear = list_fear
         # init variables for extracting features from user input
-        self.spell = SpellChecker()
         self.corrected = []
         self.uncorrected = []
         self.doc = None
@@ -147,30 +142,29 @@ class Classifier:
         return [(h / len(self.doc)), (s / len(self.doc)), (a / len(self.doc)), (f / len(self.doc))]
 
     # runs user input through neural net and returns detected emotions
-    def get_emotions(self, user_message):
+    def get_emotions(self, user_input):
         # check if input is debug input
-        if user_message == "h" or user_message == "s" or user_message == "a" or user_message == "f" or user_message == "d" or user_message == "n":
-            return self.get_emotions_debug(user_message)
+        if user_input == "h" or user_input == "s" or user_input == "a" or user_input == "f" or user_input == "d" or user_input == "n":
+            return self.get_emotions_debug(user_input)
         else:
-            self.user_message = self.correct_input(user_message)
             # run input through net and round them
             if self.network_name == "net_lin_emotion_all" or self.network_name == "net_lin_tweet_all":
                 # create different feature vectors
-                self.features = self.get_input_features(self.user_message)
-                self.lex_words = self.get_input_lexicon_words(self.user_message)
+                self.features = self.get_input_features(user_input)
+                self.lex_words = self.get_input_lexicon_words(user_input)
                 self.all_features = [self.features[0], self.features[1], self.features[2], self.lex_words[0], self.lex_words[1], self.lex_words[2], self.lex_words[3], self.features[3]]
                 # run feature vector through network
                 self.emotions = self.network(torch.Tensor(self.all_features)).tolist()
                 self.highest_emotion = self.emotions.index(min(self.emotions))
                 self.highest_emotion_score = max(self.emotions)
             elif self.network_name == "net_rnn_emotion":
-                input = torch.Tensor([self.get_pos_list(self.user_message, 85)])
+                input = torch.Tensor([self.get_pos_list(user_input, 85)])
                 hidden = self.network.init_hidden(1)
                 self.emotions = self.network(input, hidden)[0][0].tolist()
                 self.highest_emotion = self.emotions.index(min(self.emotions))
                 self.highest_emotion_score = max(self.emotions)
             elif self.network_name == "net_rnn_tweet":
-                input = torch.Tensor([self.get_pos_list(self.user_message, 179)])
+                input = torch.Tensor([self.get_pos_list(user_input, 179)])
                 hidden = self.network.init_hidden(1)
                 self.emotions = self.network(input, hidden)[0][0].tolist()
                 self.highest_emotion = self.emotions.index(min(self.emotions))
@@ -184,7 +178,7 @@ class Classifier:
             # return emotion package (emotions and topics)
             return {
                 "input_emotions": np.asarray(self.emotions),
-                "input_topics": self.get_topics(self.user_message)
+                "input_topics": self.get_topics(user_input)
             }
 
     # get debug-emotion-values
@@ -227,67 +221,3 @@ class Classifier:
         for item in self.topic_keywords:
             self.keyword_analysis.append(round(self.topics_set[item], 2).__str__())
         return self.keyword_analysis
-
-    # spellchecks and corrects the user's input
-    def correct_input(self, user_input):
-        # make list of all words
-        words = user_input.split(" ")
-        unknown_words = self.spell.unknown(words)
-        # replace all unknown words
-        for word in unknown_words:
-            print("correction: ", word, self.spell.correction(word))
-            user_input = user_input.replace(word, self.spell.correction(word))
-
-        return user_input
-
-    # looks for synonyms in a user input and returns them with an intensity score
-    def get_synonyms(self, user_input, highest_emotion, emotion_score):
-        # prepare needed datasets
-        if highest_emotion == 0:
-            syn_lex = self.lex_happiness
-            syn_list = self.list_happiness
-        elif highest_emotion == 1:
-            syn_lex = self.lex_sadness
-            syn_list = self.list_sadness
-        elif highest_emotion == 2:
-            syn_lex = self.lex_anger
-            syn_list = self.list_anger
-        elif highest_emotion == 3:
-            syn_lex = self.lex_fear
-            syn_list = self.list_fear
-
-        # create list of all nouns in the user input and their synonyms
-        syn_doc_1 = self.nlp(user_input)
-        nouns = [token.text for token in syn_doc_1 if token.pos == 92]
-        synonyms = []
-        for index, noun in enumerate(nouns):
-            synonyms.append([noun, {}])
-            for syn in wordnet.synsets(noun):
-                for l in syn.lemmas():
-                    # replace underscore
-                    found_syn = l.name()
-                    syn_doc_2 = self.nlp(l.name())
-                    # if word is noun, keep it
-                    if syn_doc_2[0].pos == 92 and not "_" in found_syn:
-                        synonyms[index][1][found_syn] = 0.0
-
-        # look for emotion-intensity scores in lexicon for found synonyms
-        for index, item in enumerate(synonyms):
-            for synonym, score in item[1].items():
-                if synonym in syn_list:
-                    row = syn_lex.loc[syn_lex["text"] == synonym]
-                    intensity = row["intensity"]
-                    intensity = intensity.tolist()[0]
-                    # berechnen die distanz zum emotion_input
-                    distance = round(abs(intensity - emotion_score), 3)
-                    synonyms[index][1][synonym] = distance
-                else:
-                    synonyms[index][1][synonym] = 2
-
-        # create map with the highest rating synonyms
-        switch_words = {}
-        for index, item in enumerate(synonyms):
-            scores_dict = item[1]
-            switch_words[item[0]] = min(scores_dict, key=scores_dict.get)
-        print("synonyms found", switch_words)
-        return switch_words

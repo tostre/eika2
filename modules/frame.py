@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg as FigureCanvas
+
 matplotlib.use('TkAgg')
 
 
@@ -258,4 +259,3 @@ class DiagramManager:
         # In most cases, add_subplot would be the prefered method to create axes for plots on a canvas.
         # Only in cases where exact positioning matters, add_axes might be useful.
         pass
-
