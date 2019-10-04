@@ -45,18 +45,18 @@ class Controller:
 
         # initialize emotional variables
         print("loading lexica")
-        self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_sadness = pd.read_csv("../lexica/clean_sadness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_anger = pd.read_csv("../lexica/clean_anger.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
-        self.lex_fear = pd.read_csv("../lexica/clean_fear.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str})
+        self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
+        self.lex_sadness = pd.read_csv("../lexica/clean_sadness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
+        self.lex_anger = pd.read_csv("../lexica/clean_anger.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
+        self.lex_fear = pd.read_csv("../lexica/clean_fear.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
         self.list_happiness = self.lex_happiness["stems"].tolist()
         self.list_sadness = self.lex_sadness["stems"].tolist()
         self.list_anger = pd.Series(self.lex_anger["stems"].tolist())
         self.list_fear = self.lex_fear["stems"].tolist()
-        self.lex_happiness_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float})
-        self.lex_sadness_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float})
-        self.lex_anger_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float})
-        self.lex_fear_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float})
+        self.lex_happiness_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
+        self.lex_sadness_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
+        self.lex_anger_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
+        self.lex_fear_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
         self.emotions = ["happiness", "sadness", "anger", "fear", "disgust"]
         self.topic_keywords = ["joy", "sadness", "anger", "fear", "disgust"]
         self.topic_keywords_pos_sentiment = ["positive_emotion", "optimism", "affection", "cheerfulness", "politeness", "love", "attractive"]

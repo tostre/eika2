@@ -2,6 +2,7 @@ import chatterbot as cb
 from chatterbot.trainers import ChatterBotCorpusTrainer
 import logging
 from nltk.corpus import wordnet
+import random
 
 
 # this analyzes user inputs and generates a response
@@ -95,16 +96,16 @@ class Bot:
         # start modifier-functions with appropriate dataset
         if highest_emotion == 0:
             bot_output = self.get_synonyms(response_package["response"].text, self.lex_happiness, self.list_happiness, highest_score)
-            bot_output = self.insert_adjectives(bot_output, self.lex_happiness, self.list_happiness, highest_score)
+            bot_output = self.insert_adjectives(bot_output, self.lex_happiness_adj, highest_score)
         elif highest_emotion == 1:
             bot_output = self.get_synonyms(response_package["response"].text, self.lex_sadness, self.list_sadness, highest_score)
-            bot_output = self.insert_adjectives(bot_output, self.lex_sadness, self.list_sadness, highest_score)
+            bot_output = self.insert_adjectives(bot_output, self.lex_sadness_adj, highest_score)
         elif highest_emotion == 2:
             bot_output = self.get_synonyms(response_package["response"].text, self.lex_anger, self.list_anger, highest_score)
-            bot_output = self.insert_adjectives(bot_output, self.lex_anger, self.list_anger, highest_score)
+            bot_output = self.insert_adjectives(bot_output, self.lex_anger_adj, highest_score)
         elif highest_emotion == 3:
             bot_output = self.get_synonyms(response_package["response"].text, self.lex_fear, self.list_fear, highest_score)
-            bot_output = self.insert_adjectives(bot_output, self.lex_fear, self.list_fear, highest_score)
+            bot_output = self.insert_adjectives(bot_output, self.lex_fear_adj, highest_score)
 
         return {
             "response": bot_output,
@@ -114,8 +115,8 @@ class Bot:
     # looks for synonyms in a user input and returns them with an intensity score
     def get_synonyms(self, bot_output, lexicon, lexicon_list, highest_score):
         # create list of all nouns in the user input and their synonyms
-        syn_doc_1 = self.nlp(bot_output)
-        nouns = [token.text for token in syn_doc_1 if token.pos == 92]
+        doc = self.nlp(bot_output)
+        nouns = [token.text for token in doc if token.pos == 92]
         synonyms = []
         for index, noun in enumerate(nouns):
             synonyms.append([noun, {}])
@@ -158,10 +159,12 @@ class Bot:
     # insert adjectives into the output:
     def insert_adjectives(self, bot_output, lexicon_adj, highest_score):
         doc = self.nlp(bot_output)
+        noun_indices = []
         # Create dict from text and their pos-tags
         bot_output_dict = {
             "text": [token.text for token in doc],
-            "pos": [token.pos for token in doc]
+            "pos": [token.pos for token in doc],
+            "dep": [token.dep_ for token in doc]
         }
 
         # count how many nouns there are in the sentence
@@ -169,13 +172,36 @@ class Bot:
             num_nouns = bot_output_dict["pos"].count(92) - 1
         else:
             num_nouns = bot_output_dict["pos"].count(92)
-        # calc how many nouns should get an adjective
-        num_nouns *= highest_score
-        num_nouns = round(num_nouns)
+        # calc how many nouns should get an adjective (depending on emotion score)
+        num_nouns = round(num_nouns * highest_score)
 
-        # chosse the to_replace number of adjective from adj_lexicon that score is closest to highest_score
-        #randomly choose to_replace number of the nouns in sentence and place one of the adjectives in front of it
+        # select which nouns can receive an adjective
+        if num_nouns > 0:
+            noun_indices = [i for i, item in enumerate(bot_output_dict["text"])
+                            if bot_output_dict["pos"][i] == 92
+                            and (bot_output_dict["dep"][i] == "nsubj"
+                                 or bot_output_dict["dep"][i] == "dobj"
+                                 or bot_output_dict["dep"][i] == "pobj")]
 
+        # randomly select num_nouns amount of nouns that will receive an adjective
+        random.shuffle(noun_indices)
+        indices_to_replace = noun_indices[:num_nouns]
 
+        # make lists from lexicon
+        lexicon_text_list = lexicon_adj["text"].tolist()
+        lexicon_intensity_list = lexicon_adj["intensity"].tolist()
+        # calc differences between highest score and intensities of words
+        scores_dict = [round(abs(intensity - highest_score), 3) for intensity in lexicon_intensity_list]
 
-        return "hi"
+        # get words with the lowest difference (number of noun_indices)
+        new_adjectives = {}
+        for number in noun_indices:
+            new_adjective_index = scores_dict.index(min(scores_dict))
+            scores_dict[new_adjective_index] = 99
+            new_adjectives[number] = lexicon_text_list[new_adjective_index]
+
+        # insert adjectives into bot_output_phrase
+        for key, item in new_adjectives.items():
+            bot_output_dict["text"].insert(key, item)
+
+        return " ".join(bot_output_dict["text"])
