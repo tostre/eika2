@@ -20,12 +20,15 @@ class Classifier:
         self.topic_keywords = topic_keywords
         self.topics_set = None
         self.emotion_mapping = {"happiness": 0, "sadness": 1, "anger": 2, "fear": 3}
+        self.debug_commands = ["h", "s", "a", "f", "d"]
         self.stemmer = nltk.stem.SnowballStemmer('english')
         # load network
         self.cuda_available = torch.cuda.is_available()
         self.network_name = network
         self.network = None
         self.load_network(network)
+        self.all_nets = ["net_lin_emotion_all", "net_lin_tweet_all"]
+        self.rnn_nets = ["net_rnn_emotion", "net_rnn_tweet"]
         # assign emotion lexica
         self.lex_happiness = lex_happiness
         self.lex_sadness = lex_sadness
@@ -74,11 +77,10 @@ class Classifier:
                 self.network.load_state_dict(torch.load("../nets/net_rnn_tweet.pt", map_location=lambda storage, loc: storage))
 
     # searches for features in user input (word count, upper word count, etc)
-    def get_input_features(self, user_input):
-        self.doc = self.nlp(user_input)
-        self.word_count = len(self.doc)
-        self.upper_word_count = sum([token.text.isupper() for token in self.doc]) / len(self.doc)
-        self.ent_word_count = len(self.doc.ents) / len(self.doc)
+    def get_input_features(self, user_input, doc):
+        self.word_count = len(doc)
+        self.upper_word_count = sum([token.text.isupper() for token in doc]) / len(doc)
+        self.ent_word_count = len(doc.ents) / len(doc)
         self.cons_punct_count = 0
 
         for index, char in enumerate(user_input):
@@ -103,12 +105,11 @@ class Classifier:
             except IndexError:
                 pass
 
-        return [self.word_count, self.upper_word_count, self.ent_word_count, self.cons_punct_count]
+        return [self.word_count, self.upper_word_count, self.ent_word_count], self.cons_punct_count
 
     # returns a pos-list of the user input
-    def get_pos_list(self, user_input, seq_len):
-        self.doc = self.nlp(user_input)
-        self.pos_list = [token.pos for token in self.doc]
+    def get_pos_list(self, user_input, seq_len, doc):
+        self.pos_list = [token.pos for token in doc]
         # encode the pos-list
         for index, item in enumerate(self.pos_list):
             self.pos_list[index] = self.pos_encoding[self.pos_list[index]]
@@ -121,10 +122,9 @@ class Classifier:
         return self.pos_list
 
     # get_input_lexicon_words
-    def get_input_lexicon_words(self, user_input):
+    def get_input_lexicon_words(self, user_input, doc):
         # stem the user input
-        self.doc = self.nlp(user_input)
-        self.stemmed_input = [self.stemmer.stem(token.text) for token in self.doc]
+        self.stemmed_input = [self.stemmer.stem(token.text) for token in doc]
         # count the occurances of words from lexica
         h, s, a, f = 0, 0, 0, 0
 
@@ -139,47 +139,41 @@ class Classifier:
                 f += 1
 
         # return normalized number of lexicon words
-        return [(h / len(self.doc)), (s / len(self.doc)), (a / len(self.doc)), (f / len(self.doc))]
+        return [(h / len(doc)), (s / len(doc)), (a / len(doc)), (f / len(doc))]
 
     # runs user input through neural net and returns detected emotions
     def get_emotions(self, user_input):
+        doc = self.nlp(user_input)
         # check if input is debug input
-        if user_input == "h" or user_input == "s" or user_input == "a" or user_input == "f" or user_input == "d" or user_input == "n":
+        if user_input in self.debug_commands:
             return self.get_emotions_debug(user_input)
-        else:
+        elif self.network_name in self.all_nets:
             # run input through net and round them
-            if self.network_name == "net_lin_emotion_all" or self.network_name == "net_lin_tweet_all":
-                # create different feature vectors
-                self.features = self.get_input_features(user_input)
-                self.lex_words = self.get_input_lexicon_words(user_input)
-                self.all_features = [self.features[0], self.features[1], self.features[2], self.lex_words[0], self.lex_words[1], self.lex_words[2], self.lex_words[3], self.features[3]]
-                # run feature vector through network
-                self.emotions = self.network(torch.Tensor(self.all_features)).tolist()
-                self.highest_emotion = self.emotions.index(min(self.emotions))
-                self.highest_emotion_score = max(self.emotions)
-            elif self.network_name == "net_rnn_emotion":
-                input = torch.Tensor([self.get_pos_list(user_input, 85)])
-                hidden = self.network.init_hidden(1)
-                self.emotions = self.network(input, hidden)[0][0].tolist()
-                self.highest_emotion = self.emotions.index(min(self.emotions))
-                self.highest_emotion_score = max(self.emotions)
-            elif self.network_name == "net_rnn_tweet":
-                input = torch.Tensor([self.get_pos_list(user_input, 179)])
-                hidden = self.network.init_hidden(1)
-                self.emotions = self.network(input, hidden)[0][0].tolist()
-                self.highest_emotion = self.emotions.index(min(self.emotions))
-                self.highest_emotion_score = max(self.emotions)
+            # create different feature vectors
+            self.features = self.get_input_features(user_input, doc)
+            self.lex_words = self.get_input_lexicon_words(user_input, doc)
+            self.all_features
+            self.all_features = [self.features[0], self.features[1], self.features[2], self.lex_words[0], self.lex_words[1], self.lex_words[2], self.lex_words[3], self.features[3]]
+            # run feature vector through network
+            self.emotions = self.network(torch.Tensor(self.all_features)).tolist()
+        elif self.network_name in self.rnn_nets:
+            if self.network_name == self.rnn_nets[0]:
+                input = torch.Tensor([self.get_pos_list(user_input, 179)], doc)
+            elif self.network_name == self.rnn_nets[1]:
+                input = torch.Tensor([self.get_pos_list(user_input, 85)], doc)
+            hidden = self.network.init_hidden(1)
+            self.emotions = self.network(input, hidden)[0][0].tolist()
 
-            # add disgust value to output (net does not give out disgust value), round values
-            self.emotions.append(0)
-            for index, value in enumerate(self.emotions):
-                self.emotions[index] = round(value, 3)
+        # add disgust value to output (net does not give out disgust value), round values
+        self.emotions.append(0)
+        for index, value in enumerate(self.emotions):
+            self.emotions[index] = round(value, 3)
 
-            # return emotion package (emotions and topics)
-            return {
-                "input_emotions": np.asarray(self.emotions),
-                "input_topics": self.get_topics(user_input)
-            }
+        # return emotion package (emotions and topics)
+        return {
+            "input_emotions": np.asarray(self.emotions),
+            "input_topics": self.get_topics(user_input)
+        }
 
     # get debug-emotion-values
     def get_emotions_debug(self, user_message):

@@ -114,8 +114,8 @@ class Controller:
     def handle_input(self, user_input):
         user_input = self.correct_input(user_input)
         # update all modules
-        self.ml_package = self.classifier.get_emotions(user_input)
         self.response_package = self.bot.respond(user_input)
+        self.ml_package = self.classifier.get_emotions(user_input)
         self.state_package = self.character.update_emotional_state(self.ml_package.get("input_emotions"))
         self.response_package = self.bot.modify_output(self.response_package, self.state_package["highest emotion"], self.state_package["highest_score"])
 

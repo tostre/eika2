@@ -186,6 +186,9 @@ class Bot:
         # randomly select num_nouns amount of nouns that will receive an adjective
         random.shuffle(noun_indices)
         indices_to_replace = noun_indices[:num_nouns]
+        # if noun is in first place in sentence, remove it
+        if 0 in indices_to_replace:
+            indices_to_replace.remove(0)
 
         # make lists from lexicon
         lexicon_text_list = lexicon_adj["text"].tolist()
@@ -195,7 +198,7 @@ class Bot:
 
         # get words with the lowest difference (number of noun_indices)
         new_adjectives = {}
-        for number in noun_indices:
+        for number in indices_to_replace:
             new_adjective_index = scores_dict.index(min(scores_dict))
             scores_dict[new_adjective_index] = 99
             new_adjectives[number] = lexicon_text_list[new_adjective_index]
