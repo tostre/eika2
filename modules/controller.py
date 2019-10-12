@@ -58,9 +58,6 @@ class Controller:
         self.lex_anger_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
         self.lex_fear_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
         self.emotions = ["happiness", "sadness", "anger", "fear", "disgust"]
-        self.topic_keywords = ["joy", "sadness", "anger", "fear", "disgust"]
-        self.topic_keywords_pos_sentiment = ["positive_emotion", "optimism", "affection", "cheerfulness", "politeness", "love", "attractive"]
-        self.topic_keywords_neg_sentiment = ["cold", "swearing_terms", "disappointment", "pain", "neglect", "suffering", "negative_emotion", "hate", "rage"]
 
         # initialize ml-variables
         self.nlp = spacy.load("en_core_web_lg")
@@ -68,7 +65,7 @@ class Controller:
 
         # create bot, responsible for generating answers and classifier, for analysing the input
         self.character = Character(self.config.getboolean("default", "firstlaunch"))
-        self.classifier = Classifier(self.topic_keywords, self.network_name, self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness,
+        self.classifier = Classifier(self.network_name, self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness,
                                      self.list_anger, self.list_fear, self.nlp)
         self.bot = Bot(self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger,
                        self.list_fear, self.lex_happiness_adj, self.lex_sadness_adj, self.lex_anger_adj, self.lex_fear_adj, self.nlp)

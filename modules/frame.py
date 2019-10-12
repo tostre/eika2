@@ -13,17 +13,14 @@ class Frame:
     # initialize class instance
     def __init__(self, chatbot_name, username, init_emotional_state, init_emotional_history):
         # initialise variables
-        self.chatbot_name = chatbot_name
         self.username = username
-        self.user_input = None
-
+        self.chatbot_name = chatbot_name
         # initialize all ui elements
         self.dgm = DiagramManager(init_emotional_state, init_emotional_history)
         self.root = tk.Tk()
         self.menubar = tk.Menu()
         self.file_menu = tk.Menu(tearoff=0)
         self.chatbot_menu = tk.Menu(tearoff=0)
-        self.datasets_menu = tk.Menu(tearoff=0)
         self.network_change_menu = tk.Menu(tearoff=0)
         self.load_menu = tk.Menu(tearoff=0)
         self.response_menu = tk.Menu(tearoff=0)
@@ -36,7 +33,7 @@ class Frame:
         self.diagram_canvas = FigureCanvas(self.dgm.get_diagrams(), master=self.diagram_frame)
         self.chat_in.bind(sequence='<Return>', func=lambda event: self.forward_user_intent(intent="get_response", user_input=self.chat_in.get()))
         # create frame and menu
-        self.create_frame(self.chatbot_name)
+        self.create_frame(chatbot_name)
         self.pack_widgets()
         # set subscriber list (implements observer pattern)
         self.controller = None
@@ -47,7 +44,6 @@ class Frame:
         # add menus to menubar
         self.menubar.add_cascade(label="File", menu=self.file_menu)
         self.menubar.add_cascade(label="Chatbot", menu=self.chatbot_menu)
-        self.menubar.add_cascade(label="Datasets", menu=self.datasets_menu)
         # create file menu
         self.file_menu.add_cascade(label="Load character", menu=self.load_menu)
         self.load_menu.add_command(label="Load default character", command=lambda: self.forward_user_intent(intent="load_character", character="character_default"))

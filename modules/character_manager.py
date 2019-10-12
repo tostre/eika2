@@ -3,6 +3,18 @@ import numpy as np
 
 class Character_Manager:
     def __init__(self):
+        self.trait_values = []
+        self.max_values = []
+        self.emotional_state = []
+        self.emotional_history = None
+
+        self.relationship_status = " "
+        self.relationship_modifiers = {}
+        self.decay_modifiers = []
+        self.empathy_functions = []
+        self.state_modifiers_threshold = 0
+        self.state_modifiers_values = []
+        self.delta_function = []
         pass
 
     def save(self, file):

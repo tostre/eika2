@@ -28,6 +28,8 @@ class Bot:
         self.list_fear = list_fear
 
         # initialise variables
+        self.is_debug_input = False
+        self.debug_commands = ["h", "s", "a", "f", "d"]
         self.nlp = nlp
         self.response = None
         self.response_package = {}
@@ -48,69 +50,49 @@ class Bot:
 
     # returns chatbot response, with some additional data
     def respond(self, user_message):
-        if user_message == "h" or user_message == "s" or user_message == "a" or user_message == "f" or user_message == "d" or user_message == "n":
+        if user_message in self.debug_commands:
             return self.respond_debug(user_message)
         else:
+            self.is_debug_input = False
             self.response = self.bot.get_response(user_message)
 
             self.response_package = {
                 "response": self.response,
-                "response_confidence": self.response.confidence
+                "response_confidence": self.response.confidence,
+                "is_debug_input": False
             }
             return self.response_package
 
     # Return generic respinse dicts for debug purposes
     def respond_debug(self, user_message):
-        if user_message == "h":
-            return {
-                "response": "Debug input: h",
-                "response_confidence": 100
-            }
-        elif user_message == "s":
-            return {
-                "response": "Debug input: s",
-                "response_confidence": 100
-            }
-        elif user_message == "a":
-            return {
-                "response": "Debug input: a",
-                "response_confidence": 100
-            }
-        elif user_message == "f":
-            return {
-                "response": "Debug input: f",
-                "response_confidence": 100
-            }
-        elif user_message == "d":
-            return {
-                "response": "Debug input: d",
-                "response_confidence": 100
-            }
-        elif user_message == "n":
-            return {
-                "response": "Debug input: n",
-                "response_confidence": 100
-            }
+        return {"response": "debug_input", "response_confidence": 100, "is_debug_input": True}
 
     def modify_output(self, response_package, highest_emotion, highest_score):
-        # start modifier-functions with appropriate dataset
-        if highest_emotion == 0:
-            bot_output = self.get_synonyms(response_package["response"].text, self.lex_happiness, self.list_happiness, highest_score)
-            bot_output = self.insert_adjectives(bot_output, self.lex_happiness_adj, highest_score)
-        elif highest_emotion == 1:
-            bot_output = self.get_synonyms(response_package["response"].text, self.lex_sadness, self.list_sadness, highest_score)
-            bot_output = self.insert_adjectives(bot_output, self.lex_sadness_adj, highest_score)
-        elif highest_emotion == 2:
-            bot_output = self.get_synonyms(response_package["response"].text, self.lex_anger, self.list_anger, highest_score)
-            bot_output = self.insert_adjectives(bot_output, self.lex_anger_adj, highest_score)
-        elif highest_emotion == 3:
-            bot_output = self.get_synonyms(response_package["response"].text, self.lex_fear, self.list_fear, highest_score)
-            bot_output = self.insert_adjectives(bot_output, self.lex_fear_adj, highest_score)
+        if self.is_debug_input:
+            # start modifier-functions with appropriate dataset
+            if highest_emotion == 0:
+                bot_output = self.get_synonyms(response_package["response"].text, self.lex_happiness, self.list_happiness, highest_score)
+                bot_output = self.insert_adjectives(bot_output, self.lex_happiness_adj, highest_score)
+            elif highest_emotion == 1:
+                bot_output = self.get_synonyms(response_package["response"].text, self.lex_sadness, self.list_sadness, highest_score)
+                bot_output = self.insert_adjectives(bot_output, self.lex_sadness_adj, highest_score)
+            elif highest_emotion == 2:
+                bot_output = self.get_synonyms(response_package["response"].text, self.lex_anger, self.list_anger, highest_score)
+                bot_output = self.insert_adjectives(bot_output, self.lex_anger_adj, highest_score)
+            elif highest_emotion == 3:
+                bot_output = self.get_synonyms(response_package["response"].text, self.lex_fear, self.list_fear, highest_score)
+                bot_output = self.insert_adjectives(bot_output, self.lex_fear_adj, highest_score)
 
-        return {
-            "response": bot_output,
-            "response_confidence": response_package["response_confidence"]
-        }
+            return {
+                "response": bot_output,
+                "response_confidence": response_package["response_confidence"]
+            }
+
+        else:
+            return {
+                "response": response_package["response"],
+                "response_confidence": response_package["response_confidence"]
+            }
 
     # looks for synonyms in a user input and returns them with an intensity score
     def get_synonyms(self, bot_output, lexicon, lexicon_list, highest_score):
@@ -158,8 +140,12 @@ class Bot:
 
     # insert adjectives into the output:
     def insert_adjectives(self, bot_output, lexicon_adj, highest_score):
+        # make lists from lexicon
+        lexicon_text_list = lexicon_adj["text"].tolist()
+        lexicon_intensity_list = lexicon_adj["intensity"].tolist()
         doc = self.nlp(bot_output)
         noun_indices = []
+        new_adjectives = {}
         # Create dict from text and their pos-tags
         bot_output_dict = {
             "text": [token.text for token in doc],
@@ -190,14 +176,11 @@ class Bot:
         if 0 in indices_to_replace:
             indices_to_replace.remove(0)
 
-        # make lists from lexicon
-        lexicon_text_list = lexicon_adj["text"].tolist()
-        lexicon_intensity_list = lexicon_adj["intensity"].tolist()
+
         # calc differences between highest score and intensities of words
         scores_dict = [round(abs(intensity - highest_score), 3) for intensity in lexicon_intensity_list]
 
         # get words with the lowest difference (number of noun_indices)
-        new_adjectives = {}
         for number in indices_to_replace:
             new_adjective_index = scores_dict.index(min(scores_dict))
             scores_dict[new_adjective_index] = 99
