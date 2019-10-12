@@ -15,7 +15,6 @@ from spellchecker import SpellChecker
 # this enables the system to be highly modular, every component (classifier, bot, character) can be switched
 class Controller:
     def __init__(self):
-
         # create default personalities
         print("loading characters")
         cm = Character_Manager()
@@ -37,12 +36,6 @@ class Controller:
         self.username = self.config.get("default", "username")
         self.network_name = self.config.get("net", "network")
 
-        # initialize chat variables
-        self.ml_package = {}
-        self.response_package = {}
-        self.state_package = {}
-        self.log_message = []
-
         # initialize emotional variables
         print("loading lexica")
         self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
@@ -57,7 +50,6 @@ class Controller:
         self.lex_sadness_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
         self.lex_anger_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
         self.lex_fear_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
-        self.emotions = ["happiness", "sadness", "anger", "fear", "disgust"]
 
         # initialize ml-variables
         self.nlp = spacy.load("en_core_web_lg")
@@ -65,8 +57,7 @@ class Controller:
 
         # create bot, responsible for generating answers and classifier, for analysing the input
         self.character = Character(self.config.getboolean("default", "firstlaunch"))
-        self.classifier = Classifier(self.network_name, self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness,
-                                     self.list_anger, self.list_fear, self.nlp)
+        self.classifier = Classifier(self.network_name, self.list_happiness, self.list_sadness, self.list_anger, self.list_fear, self.nlp)
         self.bot = Bot(self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger,
                        self.list_fear, self.lex_happiness_adj, self.lex_sadness_adj, self.lex_anger_adj, self.lex_fear_adj, self.nlp)
 
@@ -109,17 +100,17 @@ class Controller:
 
     # take user input, generate new data an update ui
     def handle_input(self, user_input):
-        user_input = self.correct_input(user_input)
+        # user_input = self.correct_input(user_input)
         # update all modules
-        self.response_package = self.bot.respond(user_input)
-        self.ml_package = self.classifier.get_emotions(user_input)
-        self.state_package = self.character.update_emotional_state(self.ml_package.get("input_emotions"))
-        self.response_package = self.bot.modify_output(self.response_package, self.state_package["highest emotion"], self.state_package["highest_score"])
+        response_package = self.bot.respond(user_input)
+        ml_package = self.classifier.get_emotions(user_input)
+        state_package = self.character.update_emotional_state(ml_package.get("input_emotions"))
+        response_package = self.bot.modify_output(response_package, state_package["highest emotion"], state_package["highest_score"])
 
         # update gui
-        self.frame.update_chat_out(user_input, self.response_package.get("response").__str__())
-        self.frame.update_log([("network: " + self.network_name), self.ml_package, self.state_package, self.response_package])
-        self.frame.update_diagrams(self.state_package.get("emotional_state"), self.state_package.get("emotional_history"))
+        self.frame.update_chat_out(user_input, response_package.get("response").__str__())
+        self.frame.update_log([("network: " + self.network_name), ml_package, state_package, response_package])
+        self.frame.update_diagrams(state_package.get("emotional_state"), state_package.get("emotional_history"))
 
     # corrects user input
     def correct_input(self, user_input):
