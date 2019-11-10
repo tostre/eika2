@@ -1,2 +1,4 @@
-12.10.19 23:51:49 modules.character/INFO - - Session start. character_saved loaded
-12.10.19 23:52:24 modules.character/INFO - - Session end. character_saved saved.
+13.10.19 15:09:16 controller/INFO - - Lexica loaded
+13.10.19 15:09:41 modules.character/INFO - - Session start. character_saved loaded
+13.10.19 15:19:18 modules.character/INFO - - Session end. character_saved saved.
+13.10.19 15:19:18 controller/INFO - - Session saved - end program

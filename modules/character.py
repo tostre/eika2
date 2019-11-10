@@ -7,23 +7,17 @@ class Character:
     def __init__(self, first_launch):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-        self.character_package = {}
-
+        # init emotional state variables
         self.emotional_state = np.zeros(5)
-        self.emotional_state_old = np.zeros(5)
         self.emotional_history = np.zeros((5, 5))
-
-        self.modifier = np.zeros((5, 4))
+        # modifier variables
         self.empathy_modifier = 0
         self.state_modifier = 0
         self.mean_delta = 0
         self.result = 0
 
         # in the case of the first launch, load default values, else load previous state
-        if first_launch:
-            self.load("character_default")
-        else:
-            self.load("character_saved")
+        self.load("character_default") if first_launch else self.load("character_saved")
 
     # loads character variables from a npz file
     def load(self, file):
@@ -75,9 +69,9 @@ class Character:
     # updates internal emotional state/history based on input emotions
     def update_emotional_state(self, input_emotions):
         # Saves the change for one emotion caused by all input emotions
-        self.emotional_state_old = self.emotional_state.copy()
-        self.modifier = np.zeros((5, 3))
-
+        emotional_state_old = self.emotional_state.copy()
+        modifier = np.zeros((5, 3))
+        
         # Apply relationship modifier (on input emotions)
         if self.relationship_status in self.relationship_modifiers:
             input_emotions *= self.relationship_modifiers[self.relationship_status]
@@ -85,12 +79,12 @@ class Character:
         # build modifier array
         for emotion, value in enumerate(input_emotions, start=0):
             # get empathy modifiers, state modifiers
-            self.modifier[emotion, 0] = self.decay_modifiers[emotion]
-            self.modifier[emotion, 1] = self.get_empathy_modifier(input_emotions, emotion)
-            self.modifier[emotion, 2] = self.get_state_modifier(emotion)
-            self.emotional_state[emotion] = self.emotional_state_old[emotion] + (np.sum(self.modifier[emotion, 0:-1]) * self.modifier[emotion, 2])
+            modifier[emotion, 0] = self.decay_modifiers[emotion]
+            modifier[emotion, 1] = self.get_empathy_modifier(input_emotions, emotion)
+            modifier[emotion, 2] = self.get_state_modifier(emotion)
+            self.emotional_state[emotion] = emotional_state_old[emotion] + (np.sum(modifier[emotion, 0:-1]) * modifier[emotion, 2])
         # apply delta modifier
-        self.emotional_state[0] += self.get_delta_modifier(self.emotional_state, self.emotional_state_old)
+        self.emotional_state[0] += self.get_delta_modifier(self.emotional_state, emotional_state_old)
 
         # update emotional state and history
         self.emotional_state = self.clean_state(self.emotional_state)
@@ -104,10 +98,10 @@ class Character:
 
     # Returns value of modifier based on the interaction function between two emotions
     def get_empathy_modifier(self, input_emotions, emotion):
-        self.empathy_modifier = 0
+        empathy_modifier = 0
         for i, function in enumerate(self.empathy_functions[emotion], start=0):
-            self.empathy_modifier += self.linear_function(input_emotions[i], function)
-        return self.empathy_modifier
+            empathy_modifier += self.linear_function(input_emotions[i], function)
+        return empathy_modifier
 
     # Lowers/Raises influence of other mods based on height of emo-value
     def get_state_modifier(self, emotion):

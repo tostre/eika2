@@ -29,15 +29,14 @@ class Controller:
         self.logger.setLevel(logging.INFO)
 
         # read config file and save values in variables
-        print("loading config")
         self.config = configparser.ConfigParser()
         self.config.read("../config/config.ini")
         self.botname = self.config.get("default", "botname")
         self.username = self.config.get("default", "username")
         self.network_name = self.config.get("net", "network")
+        self.logger.info("Conifg loaded: ", self.botname, self.username, self.network_name)
 
         # initialize emotional variables
-        print("loading lexica")
         self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
         self.lex_sadness = pd.read_csv("../lexica/clean_sadness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
         self.lex_anger = pd.read_csv("../lexica/clean_anger.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
@@ -50,6 +49,7 @@ class Controller:
         self.lex_sadness_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
         self.lex_anger_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
         self.lex_fear_adj = pd.read_csv("../lexica/clean_happiness_adj.csv", delimiter=",", dtype={"text": str, "intensity": float}, float_precision='round_trip')
+        self.logger.info("Lexica loaded")
 
         # initialize ml-variables
         self.nlp = spacy.load("en_core_web_lg")
@@ -63,7 +63,7 @@ class Controller:
 
         # create frame and update widgets with initial values
         print("initialising gui")
-        self.frame = Frame(self.botname, self.username, self.character.get_emotional_state(), self.character.get_emotional_history())
+        self.frame = Frame(self.botname, self.character.get_emotional_state(), self.character.get_emotional_history())
         self.frame.register_subscriber(self)
         self.frame.show()
 
@@ -106,9 +106,8 @@ class Controller:
         ml_package = self.classifier.get_emotions(user_input)
         state_package = self.character.update_emotional_state(ml_package.get("input_emotions"))
         response_package = self.bot.modify_output(response_package, state_package["highest emotion"], state_package["highest_score"])
-
         # update gui
-        self.frame.update_chat_out(user_input, response_package.get("response").__str__())
+        self.frame.update_chat_out(user_input, response_package.get("response").__str__(), self.botname, self.username)
         self.frame.update_log([("network: " + self.network_name), ml_package, state_package, response_package])
         self.frame.update_diagrams(state_package.get("emotional_state"), state_package.get("emotional_history"))
 
@@ -135,6 +134,7 @@ class Controller:
         # save new value in file
         with open("../config/config.ini", "w") as f:
             self.config.write(f)
+        self.logger.info(f"Session saved - end program")
 
 
 controller = Controller()

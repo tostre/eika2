@@ -4,3 +4,5 @@ datasets/*
 datasets_backup/*
 .idea/
 .idea/*
+nets/.ipynb_checkpoints/*
+modules/db.sqlite3

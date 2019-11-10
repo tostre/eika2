@@ -136,6 +136,7 @@ class Bot:
         # save indices of words that could receive an adjective
         noun_indices = [index for index, token in enumerate(doc) if pos[index] == "NOUN" and (dep[index] == "nsubj" or dep[index] == "dobj" or dep[index] == "pobj" or dep[index] == "attr")]
         if 0 in noun_indices: noun_indices.remove(0)
+        noun_indices = noun_indices[:int(abs(round(len(noun_indices) * highest_score, 0)))]
 
         # calculate the distances of the intensity score and the highest emotion score
         distances = [round(abs(row["intensity"] - highest_score), 3) for index, row in lex.iterrows()]
