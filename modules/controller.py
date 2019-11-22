@@ -57,7 +57,7 @@ class Controller:
 
         # create bot, responsible for generating answers and classifier, for analysing the input
         self.character = Character(self.config.getboolean("default", "firstlaunch"))
-        self.classifier = Classifier(self.network_name, self.list_happiness, self.list_sadness, self.list_anger, self.list_fear, self.nlp)
+        self.classifier = Classifier(self.network_name, [self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear], self.nlp)
         self.bot = Bot(self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger,
                        self.list_fear, self.lex_happiness_adj, self.lex_sadness_adj, self.lex_anger_adj, self.lex_fear_adj, self.nlp)
 
@@ -97,6 +97,7 @@ class Controller:
         elif intent == "change_network":
             self.classifier.load_network(network)
             self.network_name = network
+            print(network)
 
     # take user input, generate new data an update ui
     def handle_input(self, user_input):

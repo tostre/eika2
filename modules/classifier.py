@@ -4,6 +4,7 @@ import torch
 import nltk
 from itertools import groupby
 from modules.neural_networks.net_lin_emotion_all import Net_Lin_Emotion_All
+from joblib import load
 from modules.neural_networks.net_lin_tweet_all import Net_Lin_Tweet_All
 from modules.neural_networks.net_rnn_emotion import Net_Rnn_Emotion
 from modules.neural_networks.net_rnn_tweet import Net_Rnn_Tweet
@@ -11,7 +12,7 @@ from modules.neural_networks.net_rnn_tweet import Net_Rnn_Tweet
 
 class Classifier:
     # constructor
-    def __init__(self, network, list_happiness, list_sadness, list_anger, list_fear, nlp):
+    def __init__(self, classifier_name, list_of_lexica, nlp):
         # init constants
         self.POS_MAPPING = {84.0: 1, 85.0: 2, 86.0: 3, 87.0: 4, 89.0: 5, 90.0: 6, 91.0: 7, 92.0: 8, 93.0: 9,
                             94.0: 10, 95.0: 11, 96.0: 12, 97.0: 13, 99.0: 14, 100.0: 15, 101.0: 16, 03.0: 17, np.nan: 18}
@@ -20,91 +21,62 @@ class Classifier:
         self.LIN_NETS_NAMES = ["net_lin_emotion_all", "net_lin_tweet_all"]
         self.RNN_NETS_NAMES = ["net_rnn_emotion", "net_rnn_tweet"]
         self.STEMMER = nltk.stem.SnowballStemmer('english')
-        self.LIST_HAPPINES = list_happiness
-        self.LIST_SADNESS = list_sadness
-        self.LIST_ANGER = list_anger
-        self.LIST_FEAR = list_fear
+        self.LIST_OF_LEXICA = list_of_lexica
+        self.SEQ_LEN = {"norm_tweet": 81, "norm_emotion": 32}
         self.NLP = nlp
 
         # load network
-        self.network_name = network
-        self.network = None
-        self.load_network(network)
+        self.classifier_name = classifier_name
+        self.classifier = None
+        self.load_network(self.classifier_name)
 
     # loads the specified network architecture
-    def load_network(self, network_name):
-        self.network_name = network_name
-        if network_name == "net_lin_emotion_all":
-            self.network = Net_Lin_Emotion_All()
-            self.network.load_state_dict(torch.load("../nets/net_lin_emotion_all.pt"))
-        elif network_name == "net_lin_tweet_all":
-            self.network = Net_Lin_Tweet_All()
-            self.network.load_state_dict(torch.load("../nets/net_lin_tweet_all.pt"))
-        # load network on gpu if available
-        if torch.cuda.is_available():
-            if network_name == "net_rnn_emotion":
-                self.network = Net_Rnn_Emotion()
-                self.network.load_state_dict(torch.load("../nets/net_rnn_emotion.pt"))
-            elif network_name == "net_rnn_tweet":
-                self.network = Net_Rnn_Tweet()
-                self.network.load_state_dict(torch.load("../nets/net_rnn_tweet.pt"))
-        else:
-            if network_name == "net_rnn_emotion":
-                self.network = Net_Rnn_Emotion()
-                self.network.load_state_dict(torch.load("../nets/net_rnn_emotion.pt", map_location=lambda storage, loc: storage))
-            elif network_name == "net_rnn_tweet":
-                self.network = Net_Rnn_Tweet()
-                self.network.load_state_dict(torch.load("../nets/net_rnn_tweet.pt", map_location=lambda storage, loc: storage))
+    def load_network(self, classifier_name):
+        self.classifier_name = classifier_name
+        if "logistic_regression" in classifier_name:
+            self.classifier = load("../models/logistic_regression/" + classifier_name + ".joblib")
+        elif "random_forests" in classifier_name:
+            self.classifier = load("../models/random_forests/" + classifier_name + ".joblib")
+        elif "net" in classifier_name:
+            self.classifier = Net_Lin_Emotion_All()
+            self.classifier.load_state_dict(torch.load("../nets/net_lin_emotion_all.pt"))
 
-    # searches for features in user input (word count, upper word count, etc)
+    def extract_features(self, list_of_lexica, input_message, seq_len):
+        doc = self.NLP(split_punct(input_message))
+        doc = self.NLP(" ".join([token.text for token in doc if not token.is_stop and token.pos != 103]))
+        if len(doc) != 0:
+            pos = [token.pos for token in doc]
+            stems = [stemmer.stem(token.text) for token in doc if token.pos != 97]
+            emotion_words = get_emotion_words(stems, list_of_lexica)
+            feature_vec = [
+                (len(doc) / seq_len), (sum([token.text.isupper() for token in doc]) / len(doc)),
+                (len(doc.ents) / len(doc)), get_cons_punct_count(pos),
+                emotion_words[0] / len(doc), emotion_words[1] / len(doc), emotion_words[2] / len(doc), emotion_words[3] / len(doc)]
+            return feature_vec, pos, stems
+        return [], [], []
 
-    def get_input_features(self, user_input, doc):
-        print("get input features")
-        word_count = len(doc)
-        upper_word_count = sum([token.text.isupper() for token in doc]) / len(doc)
-        ent_word_count = len(doc.ents) / len(doc)
+    def split_punct(text):
+        replacement = [(".", " . "), (",", " , "), ("!", " ! "), ("?", " ? ")]
+        for k, v in replacement:
+            text = text.replace(k, v)
+        return text
+
+    def get_emotion_words(stems, list_of_lexica):
+        emotion_words = np.zeros(4)
+        for index, lexicon in enumerate(list_of_lexica):
+            for stem in stems:
+                if stem in lexicon:
+                    emotion_words[index] = emotion_words[index] + 1
+        return emotion_words
+
+    def get_cons_punct_count(pos):
         cons_punct_count = 0
+        for index, item in enumerate(pos[:-1]):
+            if item == 97 and item == pos[index + 1]:
+                cons_punct_count += 1
+        return cons_punct_count
 
-        # count the number of consecutive puctuation
-        punct_groups = groupby(user_input)
-        punct_groups = [(label, sum(1 for _ in group)) for label, group in punct_groups]
-        punct_groups = [item for item in punct_groups if ("." in item or "!" in item or "?" in item or "," in item) and item[1] > 1]
-        for item in punct_groups:
-            cons_punct_count += item[1]
-
-        return [word_count, upper_word_count, ent_word_count, cons_punct_count]
-
-    # returns a pos-list of the user input
-    def get_pos_list(self, seq_len, doc):
-        pos_list = [token.pos for token in doc]
-        # encode the pos-list
-        for index, item in enumerate(pos_list):
-            pos_list[index] = self.POS_MAPPING[pos_list[index]]
-        # bring the list to to correct feature/sequence length
-        pos_list.extend([18] * seq_len)
-        pos_list = pos_list[:seq_len]
-
-        return pos_list
-
-    # get_input_lexicon_words
-    def get_input_lexicon_words(self, doc):
-        # stem the user input
-        stemmed_input = [self.STEMMER.stem(token.text) for token in doc]
-        lexicon_words = [0, 0, 0, 0]
-        # count the occurances of words from lexica
-        lexicon_words[0] = len([word for word in stemmed_input if word in self.LIST_HAPPINES])
-        lexicon_words[1] = len([word for word in stemmed_input if word in self.LIST_SADNESS])
-        lexicon_words[2] = len([word for word in stemmed_input if word in self.LIST_ANGER])
-        lexicon_words[3] = len([word for word in stemmed_input if word in self.LIST_FEAR])
-
-        # normalize number of lexicon words over sentence length
-        for index, num in enumerate(lexicon_words):
-            lexicon_words[index] = lexicon_words[index] / len(doc)
-
-        # return normalized number of lexicon words
-        return lexicon_words
-
-    # runs user input through neural net and returns detected emotions
+    # runs user input through classifier and returns detected emotions
     def get_emotions(self, user_input):
         doc = self.NLP(user_input)
         # check if input is debug input
