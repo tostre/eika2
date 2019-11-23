@@ -34,7 +34,7 @@ class Controller:
         self.botname = self.config.get("default", "botname")
         self.username = self.config.get("default", "username")
         self.network_name = self.config.get("net", "network")
-        self.logger.info("Conifg loaded: ", self.botname, self.username, self.network_name)
+        self.logger.info("Conifg loaded: {}, {}, {}".format(self.botname, self.username, self.network_name))
 
         # initialize emotional variables
         self.lex_happiness = pd.read_csv("../lexica/clean_happiness.csv", delimiter=",", dtype={"text": str, "affect": str, "stems": str}, float_precision='round_trip')
@@ -97,7 +97,6 @@ class Controller:
         elif intent == "change_network":
             self.classifier.load_network(network)
             self.network_name = network
-            print(network)
 
     # take user input, generate new data an update ui
     def handle_input(self, user_input):

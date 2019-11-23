@@ -21,6 +21,9 @@ class Frame:
         self.network_change_menu = tk.Menu(tearoff=0)
         self.load_character_menu = tk.Menu(tearoff=0)
         self.load_classifier_menu = tk.Menu(tearoff=0)
+        self.load_logistic_regresssion_menu = tk.Menu(tearoff=0)
+        self.load_random_forests_menu = tk.Menu(tearoff=0)
+        self.load_neural_net_menu = tk.Menu(tearoff=0)
         self.load_classifier_emotion_menu  = tk.Menu(tearoff=0)
         self.load_classifier_tweet_menu = tk.Menu(tearoff=0)
         self.response_menu = tk.Menu(tearoff=0)
@@ -51,9 +54,21 @@ class Frame:
         self.load_character_menu.add_command(label="Load empathetic character", command=lambda: self.forward_user_intent(intent="load_character", character="character_empathetic"))
         self.load_character_menu.add_command(label="Load irascible character", command=lambda: self.forward_user_intent(intent="load_character", character="character_irascible"))
         self.file_menu.add_cascade(label="Load network", menu=self.load_classifier_menu)
-        self.load_classifier_menu.add_cascade(label="Emotion networks", menu=self.load_classifier_emotion_menu)
-        self.load_classifier_menu.add_cascade(label="Emotion networks", menu=self.load_classifier_tweet_menu)
-        self.create_network_change_menu()
+        # Load classifier menu
+        self.load_classifier_menu.add_cascade(label="Logistic regression", menu=self.load_logistic_regresssion_menu)
+        self.load_classifier_menu.add_cascade(label="Random Forests", menu=self.load_random_forests_menu)
+        self.load_classifier_menu.add_cascade(label="Neural networks", menu=self.load_neural_net_menu)
+        self.load_logistic_regresssion_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_full_logistic_regression"))
+        self.load_logistic_regresssion_menu.add_command(label="Emotion (Lex)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_lex_logistic_regression"))
+        self.load_logistic_regresssion_menu.add_command(label="Tweet (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_full_logistic_regression"))
+        self.load_random_forests_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_full_random_forests"))
+        self.load_random_forests_menu.add_command(label="Emotion (Lex)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_lex_random_forests"))
+        self.load_random_forests_menu.add_command(label="Tweet (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_full_random_forests"))
+
+        self.load_logistic_regresssion_menu.add_command(label="Tweet (Topics)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_topics_logistic_regression"))
+
+        self.load_neural_net_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="net_lin_norm_emotion(full)_5000"))
+
         # create debug menu
         self.chatbot_menu.add_command(label="Retrain chatbot", command=lambda: self.forward_user_intent(intent="retrain_bot"))
         self.chatbot_menu.add_command(label="Reset chatbot", command=lambda: self.forward_user_intent(intent="reset_state"))
@@ -121,32 +136,6 @@ class Frame:
     def show(self):
         self.root.mainloop()
 
-    # fills the network change menu
-    def create_network_change_menu(self):
-        self.load_classifier_emotion_menu.add_command(label="Logistic Regression (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_full_logistic_regression"))
-        self.load_classifier_emotion_menu.add_command(label="Logistic Regression (Lex)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_lex_logistic_regression"))
-        self.load_classifier_emotion_menu.add_command(label="Logistic Regression (Unigram)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_vec-unigram_logistic_regression"))
-        self.load_classifier_emotion_menu.add_command(label="Logistic Regression (Bigram)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_vec-bigram_logistic_regression"))
-        self.load_classifier_emotion_menu.add_command(label="Logistic Regression (Topics)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_topics_logistic_regression"))
-
-        self.load_classifier_emotion_menu.add_command(label="Random Forests (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_full_random_forests"))
-        self.load_classifier_emotion_menu.add_command(label="Random Forests (Lex)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_lex_random_forests"))
-        self.load_classifier_emotion_menu.add_command(label="Random Forests (Unigram)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_vec-unigram_random_forests"))
-        self.load_classifier_emotion_menu.add_command(label="Random Forests (Bigram)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_vec-bigram_random_forests"))
-        self.load_classifier_emotion_menu.add_command(label="Random Forests (Topics)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_topics_random_forests"))
-
-        # insert net
-        self.load_classifier_tweet_menu.add_command(label="Logistic Regression (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_full_logistic_regression"))
-        self.load_classifier_tweet_menu.add_command(label="Logistic Regression (Lex)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_lex_logistic_regression"))
-        self.load_classifier_tweet_menu.add_command(label="Logistic Regression (Unigram)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_vec-unigram_logistic_regression"))
-        self.load_classifier_tweet_menu.add_command(label="Logistic Regression (Bigram)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_vec-bigram_logistic_regression"))
-        self.load_classifier_tweet_menu.add_command(label="Logistic Regression (Topics)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_topics_logistic_regression"))
-
-        self.load_classifier_tweet_menu.add_command(label="Random Forests (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_full_random_forests"))
-        self.load_classifier_tweet_menu.add_command(label="Random Forests (Lex)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_lex_random_forests"))
-        self.load_classifier_tweet_menu.add_command(label="Random Forests (Unigram)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_vec-unigram_random_forests"))
-        self.load_classifier_tweet_menu.add_command(label="Random Forests (Bigram)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_vec-bigram_random_forests"))
-        self.load_classifier_tweet_menu.add_command(label="Random Forests (Topics)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_topics_random_forests"))
 
 class DiagramManager:
     def __init__(self, init_emotional_state, init_emotional_history):

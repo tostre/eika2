@@ -1,2 +1,13 @@
-22.11.19 21:50:29 controller/INFO - - Lexica loaded
-22.11.19 21:50:56 modules.character/INFO - - Session start. character_saved loaded
+23.11.19 23:16:20 controller/INFO - - Conifg loaded: Chotterbotter, Du, norm_tweet_full_topics
+23.11.19 23:16:20 controller/INFO - - Lexica loaded
+23.11.19 23:16:33 modules.character/INFO - - Session start. character_saved loaded
+23.11.19 23:16:33 gensim.utils/INFO - - loading Dictionary object from ../models/dictionary/norm_tweet_dictionary
+23.11.19 23:16:33 gensim.utils/INFO - - loaded ../models/dictionary/norm_tweet_dictionary
+23.11.19 23:16:33 gensim.utils/INFO - - loading LdaMulticore object from ../models/topic_models/norm_tweet_ldamodel
+23.11.19 23:16:33 gensim.utils/INFO - - loading expElogbeta from ../models/topic_models/norm_tweet_ldamodel.expElogbeta.npy with mmap=None
+23.11.19 23:16:33 gensim.utils/INFO - - setting ignored attribute state to None
+23.11.19 23:16:33 gensim.utils/INFO - - setting ignored attribute dispatcher to None
+23.11.19 23:16:33 gensim.utils/INFO - - setting ignored attribute id2word to None
+23.11.19 23:16:33 gensim.utils/INFO - - loaded ../models/topic_models/norm_tweet_ldamodel
+23.11.19 23:16:33 gensim.utils/INFO - - loading LdaState object from ../models/topic_models/norm_tweet_ldamodel.state
+23.11.19 23:16:33 gensim.utils/INFO - - loaded ../models/topic_models/norm_tweet_ldamodel.state
