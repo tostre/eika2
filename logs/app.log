@@ -1,5 +1,5 @@
-24.11.19 18:05:30 controller/INFO - - Conifg loaded: Chotterbotter, Du, ['lr', 'norm_emotion', 'full']
-24.11.19 18:05:30 controller/INFO - - Lexica loaded
-24.11.19 18:05:40 modules.character/INFO - - Session start. character_saved loaded
-24.11.19 18:06:50 modules.character/INFO - - Session end. character_saved saved.
-24.11.19 18:06:50 controller/INFO - - Session saved - end program
+24.11.19 20:40:46 controller/INFO - - Conifg loaded: Chotterbotter, Du, ['lr', 'norm_emotion', 'full']
+24.11.19 20:40:46 controller/INFO - - Lexica loaded
+24.11.19 20:40:56 modules.character/INFO - - Session start. character_saved loaded
+24.11.19 20:46:44 modules.character/INFO - - Session end. character_saved saved.
+24.11.19 20:46:44 controller/INFO - - Session saved - end program

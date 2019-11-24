@@ -1,5 +1,4 @@
 import numpy as np
-import empath
 import torch
 import nltk
 from models.neural_networks.neural_net import Lin_Net
@@ -36,7 +35,6 @@ class Classifier:
 
     # loads the specified network architecture
     def load_network(self, classifier_data):
-        print("loading network", classifier_data)
         self.classifier_data = classifier_data
         # load data according to feature set
         if classifier_data[2] == "full":
@@ -47,7 +45,6 @@ class Classifier:
             input_dim = self.NUM_TOPICS_DICT["norm_emotion" if classifier_data[1] == "norm_emotion" else "norm_tweet"]
             self.dic = gs.corpora.Dictionary.load("../models/dictionary/{}_dictionary".format(classifier_data[1]))
             self.lda_model = gs.models.ldamulticore.LdaMulticore.load("../models/topic_models/{}_ldamodel".format(classifier_data[1]))
-
         # load classifier
         if classifier_data[0] == "lr":
             self.classifier = load("../models/logistic_regression/{}_{}_logistic_regression.joblib".format(classifier_data[1], classifier_data[2]))
@@ -73,8 +70,8 @@ class Classifier:
             elif self.classifier_data[2] == "topics":
                 num_topics = self.NUM_TOPICS_DICT[self.dataset]
                 features = self.extract_topic_features(user_input, num_topics)
-                print("new features topics", features)
-
+            else:
+                features = self.extract_lex_features(user_input)
 
             # classify with classifier
             if self.classifier_data[0] == "lr" or self.classifier_data[0] == "rf":
@@ -84,14 +81,8 @@ class Classifier:
                 input_class = input_class[0]
             elif self.classifier_data[0] == "net":
                 emotions = self.classifier(torch.Tensor(np.asarray(features)).float()).tolist()
+                input_class = emotions.index(max(emotions))
 
-            # classify input by net or by simple classifier
-            #if "net" in self.classifier_name:
-            #    print("---", features)
-            #    emotions = self.classifier(torch.from_numpy(np.asarray(features).float()))
-            #                 input_class = max(emotions)
-            #else:
-            #
             # add disgust value to output (net does not give out disgust value), round values
             emotions = [round(entry, 3) for entry in emotions]
             emotions.append(0)
@@ -109,13 +100,12 @@ class Classifier:
         feature_vec = [range(0, len(self.NET_FEATURE_SETS[self.classifier_data[1]]))]
         if len(doc) != 0:
             pos = [token.pos for token in doc]
-            print("pos", pos)
             stems = [self.STEMMER.stem(token.text) for token in doc if token.pos != 97]
             emotion_words = self.get_emotion_words(stems, self.LIST_OF_LEXICA)
             feature_vec = [
                 len(doc) / seq_len, (sum([token.text.isupper() for token in doc]) / len(doc)),
-                (len(doc.ents)/len(doc)), self.get_cons_punct_count(pos),
-                emotion_words[0]/len(doc), emotion_words[1]/len(doc), emotion_words[2]/len(doc), emotion_words[3]/len(doc)]
+                (len(doc.ents) / len(doc)), self.get_cons_punct_count(pos),
+                emotion_words[0] / len(doc), emotion_words[1] / len(doc), emotion_words[2] / len(doc), emotion_words[3] / len(doc)]
         return feature_vec
 
     def extract_topic_features(self, input_message, num_topics):
@@ -144,7 +134,6 @@ class Classifier:
         return emotion_words
 
     def get_cons_punct_count(self, pos):
-        print("pos", pos)
         pos.append(0)
         cons_punct_count = 0
         for index, item in enumerate(pos[:-1]):

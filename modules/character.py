@@ -71,7 +71,7 @@ class Character:
         # Saves the change for one emotion caused by all input emotions
         emotional_state_old = self.emotional_state.copy()
         modifier = np.zeros((5, 3))
-        
+
         # Apply relationship modifier (on input emotions)
         if self.relationship_status in self.relationship_modifiers:
             input_emotions *= self.relationship_modifiers[self.relationship_status]

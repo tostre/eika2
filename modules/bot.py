@@ -1,5 +1,4 @@
 import logging
-import random
 import collections
 import chatterbot as cb
 from nltk.corpus import wordnet

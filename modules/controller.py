@@ -34,7 +34,6 @@ class Controller:
         self.botname = self.config.get("default", "botname")
         self.username = self.config.get("default", "username")
         self.classifier_data = [self.config.get("net", "classifier_type"), self.config.get("net", "dataset"), self.config.get("net", "feature_set")]
-        print(self.classifier_data)
         self.logger.info("Conifg loaded: {}, {}, {}".format(self.botname, self.username, self.classifier_data))
 
         # initialize emotional variables
@@ -83,23 +82,15 @@ class Controller:
                 self.handle_input(input_message)
         elif intent == "retrain_bot":
             self.bot.train()
+            self.frame.update_log(["Chatbot training completed"], clear=True)
         elif intent == "reset_state":
             self.character.reset_bot()
             self.frame.update_diagrams(self.character.get_emotional_state(), self.character.get_emotional_history())
-        elif intent == "process_corpora":
-            self.frame.update_log(["Warning! This operation may take a while. Check the python console for further updates"], clear=True)
-            self.csv.cleanup_datasets(self.csv.get_list_of_corpora())
-            self.csv.save_features_in_datasets(self.csv.get_list_of_corpora())
-            self.csv.merge_datasets(self.csv.get_list_of_corpora())
-        elif intent == "process_lexica":
-            self.frame.update_log(["Warning! This operation may take a while. Check the python console for further updates"], clear=True)
-            self.csv.cleanup_datasets(self.csv.get_list_of_lexica())
-            self.csv.save_features_in_datasets(self.csv.get_list_of_lexica(), True)
-            self.csv.merge_datasets(self.csv.get_list_of_lexica(), True)
+            self.frame.update_log(["Chatbot internal state reset"], clear=True)
         elif intent == "change_classifier":
             self.classifier_data = [classifier_type, dataset, feature_set]
             self.classifier.load_network(self.classifier_data)
-
+            self.frame.update_log(["New classifier loaded", self.classifier_data], clear=True)
 
     # take user input, generate new data an update ui
     def handle_input(self, user_input):
@@ -132,7 +123,6 @@ class Controller:
         self.character.save()
 
         # set the first launch variable to false
-        print(self.classifier_data)
         self.config.set("default", "firstlaunch", "NO")
         self.config.set("net", "classifier_type", self.classifier_data[0])
         self.config.set("net", "dataset", self.classifier_data[1])
