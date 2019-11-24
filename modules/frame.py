@@ -53,21 +53,23 @@ class Frame:
         self.load_character_menu.add_command(label="Load stable character", command=lambda: self.forward_user_intent(intent="load_character", character="character_stable"))
         self.load_character_menu.add_command(label="Load empathetic character", command=lambda: self.forward_user_intent(intent="load_character", character="character_empathetic"))
         self.load_character_menu.add_command(label="Load irascible character", command=lambda: self.forward_user_intent(intent="load_character", character="character_irascible"))
-        self.file_menu.add_cascade(label="Load network", menu=self.load_classifier_menu)
+        self.file_menu.add_cascade(label="Load classifier", menu=self.load_classifier_menu)
         # Load classifier menu
         self.load_classifier_menu.add_cascade(label="Logistic regression", menu=self.load_logistic_regresssion_menu)
         self.load_classifier_menu.add_cascade(label="Random Forests", menu=self.load_random_forests_menu)
         self.load_classifier_menu.add_cascade(label="Neural networks", menu=self.load_neural_net_menu)
-        self.load_logistic_regresssion_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_full_logistic_regression"))
-        self.load_logistic_regresssion_menu.add_command(label="Emotion (Lex)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_lex_logistic_regression"))
-        self.load_logistic_regresssion_menu.add_command(label="Tweet (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_full_logistic_regression"))
-        self.load_random_forests_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_full_random_forests"))
-        self.load_random_forests_menu.add_command(label="Emotion (Lex)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_emotion_lex_random_forests"))
-        self.load_random_forests_menu.add_command(label="Tweet (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_full_random_forests"))
+        self.load_logistic_regresssion_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="lr", dataset="norm_emotion", feature_set="full"))
+        self.load_logistic_regresssion_menu.add_command(label="Emotion (Lex)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="lr", dataset="norm_emotion", feature_set="lex"))
+        self.load_logistic_regresssion_menu.add_command(label="Tweet (Full)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="lr", dataset="norm_tweet", feature_set="full"))
+        self.load_random_forests_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="rf", dataset="norm_emotion", feature_set="full"))
+        self.load_random_forests_menu.add_command(label="Emotion (Lex)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="rf", dataset="norm_emotion", feature_set="lex"))
+        self.load_random_forests_menu.add_command(label="Tweet (Full)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="rf", dataset="norm_tweet", feature_set="full"))
 
-        self.load_logistic_regresssion_menu.add_command(label="Tweet (Topics)", command=lambda: self.forward_user_intent(intent="change_network", network="norm_tweet_topics_logistic_regression"))
-
-        self.load_neural_net_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_network", network="net_lin_norm_emotion(full)_5000"))
+        self.load_neural_net_menu.add_command(label="Emotion (Full)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_emotion", feature_set="full"))
+        self.load_neural_net_menu.add_command(label="Emotion (Lex)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_emotion", feature_set="lex"))
+        self.load_neural_net_menu.add_command(label="Tweet (Full)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="full"))
+        self.load_neural_net_menu.add_command(label="Tweet (Lex)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="lex"))
+        self.load_neural_net_menu.add_command(label="Tweet (Topics)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="topics"))
 
         # create debug menu
         self.chatbot_menu.add_command(label="Retrain chatbot", command=lambda: self.forward_user_intent(intent="retrain_bot"))
@@ -89,8 +91,9 @@ class Frame:
         self.diagram_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
     # forwards user interaction with the gui to the controller
-    def forward_user_intent(self, intent, user_input=None, character=None, network=None):
-        self.controller.handle_intent(intent=intent, input_message=user_input, character=character, network=network)
+    def forward_user_intent(self, intent, user_input=None, character=None, classifier_type=None, dataset=None, feature_set=None):
+        print(intent, classifier_type, dataset, feature_set)
+        self.controller.handle_intent(intent, user_input, character, classifier_type, dataset, feature_set)
 
     # prints in chatout widget
     def update_chat_out(self, user_input, response, botname, username):
