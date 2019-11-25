@@ -4,6 +4,7 @@ import nltk
 from models.neural_networks.neural_net import Lin_Net
 from joblib import load
 import gensim as gs
+from scipy.special import softmax
 
 
 class Classifier:
@@ -68,10 +69,11 @@ class Classifier:
                 features = self.extract_lex_features(user_input)
                 features = features[-4:]
             elif self.classifier_data[2] == "topics":
-                num_topics = self.NUM_TOPICS_DICT[self.dataset]
+                num_topics = self.NUM_TOPICS_DICT[self.classifier_data[1]]
                 features = self.extract_topic_features(user_input, num_topics)
             else:
                 features = self.extract_lex_features(user_input)
+                print("features", features)
 
             # classify with classifier
             if self.classifier_data[0] == "lr" or self.classifier_data[0] == "rf":
@@ -81,7 +83,8 @@ class Classifier:
                 input_class = input_class[0]
             elif self.classifier_data[0] == "net":
                 emotions = self.classifier(torch.Tensor(np.asarray(features)).float()).tolist()
-                input_class = emotions.index(max(emotions))
+                emotions = softmax(emotions)
+                input_class = emotions.tolist().index(max(emotions))
 
             # add disgust value to output (net does not give out disgust value), round values
             emotions = [round(entry, 3) for entry in emotions]
@@ -97,6 +100,7 @@ class Classifier:
         seq_len = self.SEQ_LEN_DICT[self.classifier_data[1]]
         doc = self.NLP(self.split_punct(input_message))
         doc = self.NLP(" ".join([token.text for token in doc if not token.is_stop and token.pos != 103]))
+        print("doc", doc)
         feature_vec = [range(0, len(self.NET_FEATURE_SETS[self.classifier_data[1]]))]
         if len(doc) != 0:
             pos = [token.pos for token in doc]

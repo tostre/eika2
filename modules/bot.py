@@ -116,6 +116,8 @@ class Bot:
         switch_words = {}
         for index, item in enumerate(synonyms):
             scores_dict = item[1]
+            print("scores dict", scores_dict)
+            #@Todo wenn scores_dict leer ist, gibts hier probleme (zb bei eingabe "tweet full is a good network"
             switch_words[item[0]] = min(scores_dict, key=scores_dict.get)
         # replace words in bot_output
         bot_output_list = response.split(" ")

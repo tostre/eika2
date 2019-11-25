@@ -82,15 +82,16 @@ class Controller:
                 self.handle_input(input_message)
         elif intent == "retrain_bot":
             self.bot.train()
-            self.frame.update_log(["Chatbot training completed"], clear=True)
+            self.frame.update_log(["chatbot training completed"], clear=True)
         elif intent == "reset_state":
             self.character.reset_bot()
             self.frame.update_diagrams(self.character.get_emotional_state(), self.character.get_emotional_history())
-            self.frame.update_log(["Chatbot internal state reset"], clear=True)
+            self.frame.update_log(["chatbot internal state reset"], clear=True)
         elif intent == "change_classifier":
             self.classifier_data = [classifier_type, dataset, feature_set]
             self.classifier.load_network(self.classifier_data)
-            self.frame.update_log(["New classifier loaded", self.classifier_data], clear=True)
+            self.frame.update_log(["classifier ready", self.classifier_data], clear=True)
+            self.logger.info("New classifier loaded: {}".format(" ".join(self.classifier_data)))
 
     # take user input, generate new data an update ui
     def handle_input(self, user_input):
