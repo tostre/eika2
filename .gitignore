@@ -6,3 +6,5 @@ datasets_backup/*
 .idea/*
 nets/.ipynb_checkpoints/*
 modules/db.sqlite3
+*__pychache__*
+models/spacy/

@@ -36,9 +36,9 @@ class Bot:
 
         # intitialize the chatbot
         self.bot = cb.ChatBot("chatterbot", preprocessors=['chatterbot.preprocessors.clean_whitespace'])
-        self.train()
 
     def train(self):
+        print("training chatbot")
         trainer = ChatterBotCorpusTrainer(self.bot)
         trainer.train("chatterbot.corpus.english.conversations")
         return "Training complete"
@@ -76,7 +76,6 @@ class Bot:
             elif highest_emotion == 3:
                 bot_output = self.get_synonyms(response_package["response"].text, self.lex_fear, self.list_fear, highest_score)
                 bot_output = self.insert_adjectives(bot_output, self.lex_fear_adj, highest_score)
-
         return {
             "response": bot_output,
             "response_confidence": response_package["response_confidence"]
@@ -100,31 +99,30 @@ class Bot:
                         synonyms[index][1][synonym] = 0.0
 
         # look for emotion-intensity scores in lexicon for found synonyms
-        for index, item in enumerate(synonyms):
-            for synonym, score in item[1].items():
-                if synonym in lexicon_list:
-                    row = lexicon.loc[lexicon["text"] == synonym]
-                    intensity = row["intensity"]
-                    intensity = intensity.tolist()[0]
-                    # berechnen die distanz zum emotion_input
-                    distance = round(abs(intensity - highest_score), 3)
-                    synonyms[index][1][synonym] = distance
-                else:
-                    synonyms[index][1][synonym] = 2
+        if synonyms:
+            for index, item in enumerate(synonyms):
+                for synonym, score in item[1].items():
+                    if synonym in lexicon_list:
+                        row = lexicon.loc[lexicon["text"] == synonym]
+                        intensity = row["intensity"]
+                        intensity = intensity.tolist()[0]
+                        # berechnen die distanz zum emotion_input
+                        distance = round(abs(intensity - highest_score), 3)
+                        synonyms[index][1][synonym] = distance
+                    else:
+                        synonyms[index][1][synonym] = 2
 
-        # create map with the highest rating synonyms
-        switch_words = {}
-        for index, item in enumerate(synonyms):
-            scores_dict = item[1]
-            print("scores dict", scores_dict)
-            #@Todo wenn scores_dict leer ist, gibts hier probleme (zb bei eingabe "tweet full is a good network"
-            switch_words[item[0]] = min(scores_dict, key=scores_dict.get)
-        # replace words in bot_output
-        bot_output_list = response.split(" ")
-        for index, word in enumerate(bot_output_list):
-            if word in switch_words:
-                bot_output_list[index] = switch_words[bot_output_list[index]]
-        response = " ".join(bot_output_list)
+            # create map with the highest rating synonyms
+            switch_words = {}
+            for index, item in enumerate(synonyms):
+                scores_dict = item[1]
+                switch_words[item[0]] = min(scores_dict, key=scores_dict.get)
+            # replace words in bot_output
+            bot_output_list = response.split(" ")
+            for index, word in enumerate(bot_output_list):
+                if word in switch_words:
+                    bot_output_list[index] = switch_words[bot_output_list[index]]
+            response = " ".join(bot_output_list)
 
         return response
 
@@ -150,9 +148,11 @@ class Bot:
         # order the entries in descending order or else the replacement in output will shift
         adjectives = collections.OrderedDict(sorted(adjectives.items(), reverse=True))
 
-        # make output to list, insert adjectives and convert back to string
-        bot_output = bot_output.split(" ")
-        for index, adjective in adjectives.items():
-            bot_output.insert(index, adjective)
+        if adjectives:
+            # make output to list, insert adjectives and convert back to string
+            bot_output = bot_output.split(" ")
+            for index, adjective in adjectives.items():
+                bot_output.insert(index, adjective)
+            bot_output = " ".join(bot_output)
 
-        return " ".join(bot_output)
+        return bot_output

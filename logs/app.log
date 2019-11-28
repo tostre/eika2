@@ -1,15 +1,6 @@
-25.11.19 21:12:00 controller/INFO - - Conifg loaded: Chotterbotter, Du, ['net', 'norm_tweet', 'topics']
-25.11.19 21:12:00 controller/INFO - - Lexica loaded
-25.11.19 21:12:14 modules.character/INFO - - Session start. character_saved loaded
-25.11.19 21:12:14 gensim.utils/INFO - - loading Dictionary object from ../models/dictionary/norm_tweet_dictionary
-25.11.19 21:12:15 gensim.utils/INFO - - loaded ../models/dictionary/norm_tweet_dictionary
-25.11.19 21:12:15 gensim.utils/INFO - - loading LdaMulticore object from ../models/topic_models/norm_tweet_ldamodel
-25.11.19 21:12:15 gensim.utils/INFO - - loading expElogbeta from ../models/topic_models/norm_tweet_ldamodel.expElogbeta.npy with mmap=None
-25.11.19 21:12:15 gensim.utils/INFO - - setting ignored attribute state to None
-25.11.19 21:12:15 gensim.utils/INFO - - setting ignored attribute dispatcher to None
-25.11.19 21:12:15 gensim.utils/INFO - - setting ignored attribute id2word to None
-25.11.19 21:12:15 gensim.utils/INFO - - loaded ../models/topic_models/norm_tweet_ldamodel
-25.11.19 21:12:15 gensim.utils/INFO - - loading LdaState object from ../models/topic_models/norm_tweet_ldamodel.state
-25.11.19 21:12:15 gensim.utils/INFO - - loaded ../models/topic_models/norm_tweet_ldamodel.state
-25.11.19 21:35:07 modules.character/INFO - - Session end. character_saved saved.
-25.11.19 21:35:07 controller/INFO - - Session saved - end program
+28.11.19 23:36:52 controller/INFO - - Conifg loaded: Chotterbotter, Du, ['lr', 'norm_emotion', 'full']
+28.11.19 23:36:52 controller/INFO - - Lexica loaded
+28.11.19 23:37:18 modules.character/INFO - - Session start. character_saved loaded
+28.11.19 23:37:35 controller/INFO - - classifier loaded: net norm_tweet topics
+28.11.19 23:43:34 modules.character/INFO - - Session end. character_saved saved.
+28.11.19 23:43:46 controller/INFO - - Session saved - end program

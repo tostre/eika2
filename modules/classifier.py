@@ -37,8 +37,10 @@ class Classifier:
     # loads the specified network architecture
     def load_network(self, classifier_data):
         self.classifier_data = classifier_data
+        print("loading classifier with: ", self.classifier_data)
         # load data according to feature set
         if classifier_data[2] == "full":
+            print("-loading ")
             input_dim = self.NET_FEATURE_SET_SIZES["norm_emotion" if classifier_data[1] == "norm_emotion" else "norm_tweet"]
         elif classifier_data[2] == "lex":
             input_dim = 4
@@ -73,7 +75,6 @@ class Classifier:
                 features = self.extract_topic_features(user_input, num_topics)
             else:
                 features = self.extract_lex_features(user_input)
-                print("features", features)
 
             # classify with classifier
             if self.classifier_data[0] == "lr" or self.classifier_data[0] == "rf":
@@ -100,11 +101,12 @@ class Classifier:
         seq_len = self.SEQ_LEN_DICT[self.classifier_data[1]]
         doc = self.NLP(self.split_punct(input_message))
         doc = self.NLP(" ".join([token.text for token in doc if not token.is_stop and token.pos != 103]))
-        print("doc", doc)
-        feature_vec = [range(0, len(self.NET_FEATURE_SETS[self.classifier_data[1]]))]
+        feature_vec = [0, 0, 0, 0, 0, 0, 0, 0]
         if len(doc) != 0:
             pos = [token.pos for token in doc]
+            print("extract lex features pos", pos)
             stems = [self.STEMMER.stem(token.text) for token in doc if token.pos != 97]
+            print("extract lex features stems", stems)
             emotion_words = self.get_emotion_words(stems, self.LIST_OF_LEXICA)
             feature_vec = [
                 len(doc) / seq_len, (sum([token.text.isupper() for token in doc]) / len(doc)),
@@ -114,13 +116,20 @@ class Classifier:
 
     def extract_topic_features(self, input_message, num_topics):
         # tokenizing, stemming, converting to vec, etc.
+        print("extract topic features input message", input_message)
         doc = self.NLP(self.split_punct(input_message))
+        print("extract topic features doc", [token.text for token in doc])
         doc = self.NLP(" ".join([token.text for token in doc if not token.is_stop and token.pos != 103]))
+        print("extract topic features doc", [token.text for token in doc])
         sentence = [self.STEMMER.stem(token.text) for token in doc if token.pos != 97]
+        print("extract topic features sentences", sentence)
         sentence = self.dic.doc2bow(sentence)
+        print("extract topic features sentences", sentence)
         # get the topics from the document, write probability per topics in list
         topics = self.lda_model.get_document_topics(sentence, minimum_probability=0.0)
+        print("extract topic topics", topics)
         topic_vec = [topics[i][1] for i in range(num_topics)]
+        print("extract topic features", topic_vec)
         return topic_vec
 
     def split_punct(self, text):
@@ -130,14 +139,17 @@ class Classifier:
         return text
 
     def get_emotion_words(self, stems, list_of_lexica):
+        print("get emotion words", stems)
         emotion_words = np.zeros(4)
         for index, lexicon in enumerate(list_of_lexica):
             for stem in stems:
                 if stem in lexicon:
                     emotion_words[index] = emotion_words[index] + 1
+        print("get emotion words", emotion_words)
         return emotion_words
 
     def get_cons_punct_count(self, pos):
+        print("get cons punct count", pos)
         pos.append(0)
         cons_punct_count = 0
         for index, item in enumerate(pos[:-1]):

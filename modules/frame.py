@@ -14,9 +14,9 @@ class Frame:
         self.dgm = DiagramManager(init_emotional_state, init_emotional_history)
         self.root = tk.Tk()
         self.menubar = tk.Menu()
-        self.file_menu = tk.Menu(tearoff=0)
         self.chatbot_menu = tk.Menu(tearoff=0)
         self.network_change_menu = tk.Menu(tearoff=0)
+        self.character_menu = tk.Menu(tearoff=0)
         self.load_character_menu = tk.Menu(tearoff=0)
         self.load_classifier_menu = tk.Menu(tearoff=0)
         self.load_logistic_regresssion_menu = tk.Menu(tearoff=0)
@@ -40,43 +40,43 @@ class Frame:
     # creates main frame and menu bar
     def create_frame(self, title):
         # add menus to menubar
-        self.menubar.add_cascade(label="File", menu=self.file_menu)
         self.menubar.add_cascade(label="Chatbot", menu=self.chatbot_menu)
-        # create file menu
-        self.file_menu.add_cascade(label="Load character", menu=self.load_character_menu)
+        self.menubar.add_cascade(label="Classifier", menu=self.load_classifier_menu)
+        self.menubar.add_cascade(label="Character", menu=self.character_menu)
+        # create character menu
+        self.character_menu.add_cascade(label="Load character", menu=self.load_character_menu)
+        self.character_menu.add_command(label="Reset emotional state", command=lambda: self.forward_user_intent(intent="reset_state"))
         self.load_character_menu.add_command(label="Load default character", command=lambda: self.forward_user_intent(intent="load_character", character="character_default"))
         self.load_character_menu.add_command(label="Load stable character", command=lambda: self.forward_user_intent(intent="load_character", character="character_stable"))
         self.load_character_menu.add_command(label="Load empathetic character", command=lambda: self.forward_user_intent(intent="load_character", character="character_empathetic"))
         self.load_character_menu.add_command(label="Load irascible character", command=lambda: self.forward_user_intent(intent="load_character", character="character_irascible"))
-        self.file_menu.add_cascade(label="Load classifier", menu=self.load_classifier_menu)
         # Load classifier menu
         self.load_classifier_menu.add_cascade(label="Logistic regression", menu=self.load_logistic_regresssion_menu)
         self.load_classifier_menu.add_cascade(label="Random Forests", menu=self.load_random_forests_menu)
         self.load_classifier_menu.add_cascade(label="Neural networks", menu=self.load_neural_net_menu)
-        self.load_logistic_regresssion_menu.add_command(label="Emotion (Full)",
+        self.load_logistic_regresssion_menu.add_command(label="Load Emotion (Full)",
                                                         command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="lr", dataset="norm_emotion", feature_set="full"))
-        self.load_logistic_regresssion_menu.add_command(label="Emotion (Lex)",
+        self.load_logistic_regresssion_menu.add_command(label="Load Emotion (Lex)",
                                                         command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="lr", dataset="norm_emotion", feature_set="lex"))
-        self.load_logistic_regresssion_menu.add_command(label="Tweet (Full)",
+        self.load_logistic_regresssion_menu.add_command(label="Load Tweet (Full)",
                                                         command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="lr", dataset="norm_tweet", feature_set="full"))
-        self.load_random_forests_menu.add_command(label="Emotion (Full)",
+        self.load_random_forests_menu.add_command(label="Load Emotion (Full)",
                                                   command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="rf", dataset="norm_emotion", feature_set="full"))
-        self.load_random_forests_menu.add_command(label="Emotion (Lex)",
+        self.load_random_forests_menu.add_command(label="Load Emotion (Lex)",
                                                   command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="rf", dataset="norm_emotion", feature_set="lex"))
-        self.load_random_forests_menu.add_command(label="Tweet (Full)",
+        self.load_random_forests_menu.add_command(label="Load Tweet (Full)",
                                                   command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="rf", dataset="norm_tweet", feature_set="full"))
-        self.load_neural_net_menu.add_command(label="Emotion (Full)",
+        self.load_neural_net_menu.add_command(label="Load Emotion (Full)",
                                               command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_emotion", feature_set="full"))
-        self.load_neural_net_menu.add_command(label="Emotion (Lex)",
+        self.load_neural_net_menu.add_command(label="Load Emotion (Lex)",
                                               command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_emotion", feature_set="lex"))
-        self.load_neural_net_menu.add_command(label="Tweet (Full)",
+        self.load_neural_net_menu.add_command(label="Load Tweet (Full)",
                                               command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="full"))
-        self.load_neural_net_menu.add_command(label="Tweet (Lex)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="lex"))
-        self.load_neural_net_menu.add_command(label="Tweet (Topics)",
+        self.load_neural_net_menu.add_command(label="Load Tweet (Lex)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="lex"))
+        self.load_neural_net_menu.add_command(label="Load Tweet (Topics)",
                                               command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="topics"))
         # create debug
         self.chatbot_menu.add_command(label="Retrain chatbot", command=lambda: self.forward_user_intent(intent="retrain_bot"))
-        self.chatbot_menu.add_command(label="Reset chatbot", command=lambda: self.forward_user_intent(intent="reset_state"))
         # configure frame
         self.root.configure(menu=self.menubar)
         self.root.title(title)
@@ -120,10 +120,10 @@ class Frame:
             if isinstance(item, dict):
                 for key, value in item.items():
                     self.log.insert(tk.END, key + ":\n")
-                    self.log.insert(tk.END, value.__str__() + "\n\n")
+                    self.log.insert(tk.END, value.__str__() + "\n")
             else:
                 self.log.insert(tk.END, item.__str__() + "\n\n")
-
+            self.log.insert(tk.END, "\n")
         self.log.config(state="disabled")
 
     # updates diagrams with new values
@@ -154,7 +154,7 @@ class DiagramManager:
         self.time_plot1, self.time_plot2, self.time_plot3, self.time_plot4, self.time_plot5 = (None, None, None, None, None)
         self.bar_plot = None
         # init figure and subplots/axes
-        self.fig = matplotlib.figure.Figure()
+        self.fig = matplotlib.figure.Figure(figsize=(4,2))
         self.ax3 = self.fig.add_subplot(211)
         self.ax4 = self.fig.add_subplot(212)
         # create diagrams according to the visible diagrams
@@ -171,9 +171,9 @@ class DiagramManager:
 
         self.labels.clear()
         for index in range(len(self.PLOT_CLASSES)):
-            self.labels.append(self.PLOT_CLASSES[index] + " (" + bar_data[index].__str__() + ")")
+            self.labels.append(self.PLOT_CLASSES[index] + "\n(" + bar_data[index].__str__() + ")")
 
-        ax.bar(self.labels, bar_data, width=.3, color=self.PLOT_COLORS, alpha=.75)
+        ax.bar(self.labels, bar_data, width=.9, color=self.PLOT_COLORS, alpha=.75)
         ax.bar(self.labels, history_data[1], width=.01, color=self.PLOT_COLORS_PREVIOUS_STEPS, alpha=1)
 
     # create and update a line chart

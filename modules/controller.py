@@ -16,7 +16,6 @@ from spellchecker import SpellChecker
 class Controller:
     def __init__(self):
         # create default personalities
-        print("loading characters")
         cm = Character_Manager()
         cm.save("character_default")
         cm.save("character_stable")
@@ -53,7 +52,12 @@ class Controller:
         self.logger.info("Lexica loaded")
 
         # initialize ml-variables
-        self.nlp = spacy.load("en_core_web_lg")
+        if self.config.getboolean("default", "firstlaunch"):
+            # das md-model ist ca 80mb, das lg ca 1g
+            #self.nlp = spacy.load("en_core_web_lg")
+            self.nlp = spacy.load("en_core_web_md")
+        else:
+            self.nlp = spacy.load("../models/spacy")
         self.spell = SpellChecker()
 
         # create bot, responsible for generating answers and classifier, for analysing the input
@@ -61,9 +65,9 @@ class Controller:
         self.classifier = Classifier(self.classifier_data, self.LIST_OF_LEXICA, self.nlp)
         self.bot = Bot(self.lex_happiness, self.lex_sadness, self.lex_anger, self.lex_fear, self.list_happiness, self.list_sadness, self.list_anger,
                        self.list_fear, self.lex_happiness_adj, self.lex_sadness_adj, self.lex_anger_adj, self.lex_fear_adj, self.nlp)
+        if self.config.getboolean("default", "firstlaunch"): self.bot.train()
 
         # create frame and update widgets with initial values
-        print("initialising gui")
         self.frame = Frame(self.botname, self.character.get_emotional_state(), self.character.get_emotional_history())
         self.frame.register_subscriber(self)
         self.frame.show()
@@ -77,6 +81,7 @@ class Controller:
         if intent == "load_character":
             self.character.load(character)
             self.frame.update_diagrams(self.character.get_emotional_state(), self.character.get_emotional_history())
+            self.frame.update_log([{"character ready": self.character.character_name}], clear=True)
         elif intent == "get_response":
             if input_message and input_message != "":
                 self.handle_input(input_message)
@@ -90,8 +95,8 @@ class Controller:
         elif intent == "change_classifier":
             self.classifier_data = [classifier_type, dataset, feature_set]
             self.classifier.load_network(self.classifier_data)
-            self.frame.update_log(["classifier ready", self.classifier_data], clear=True)
-            self.logger.info("New classifier loaded: {}".format(" ".join(self.classifier_data)))
+            self.frame.update_log([{"classifier ready": self.classifier_data}], clear=True)
+            self.logger.info("classifier loaded: {}".format(" ".join(self.classifier_data)))
 
     # take user input, generate new data an update ui
     def handle_input(self, user_input):
@@ -100,10 +105,10 @@ class Controller:
         response_package = self.bot.respond(user_input)
         ml_package = self.classifier.get_emotions(user_input)
         state_package = self.character.update_emotional_state(ml_package.get("input_emotions"))
-        response_package = self.bot.modify_output(response_package, state_package["highest emotion"], state_package["highest_score"])
+        response_package = self.bot.modify_output(response_package, state_package["highest_emotion"], state_package["highest_score"])
         # update gui
         self.frame.update_chat_out(user_input, response_package.get("response").__str__(), self.botname, self.username)
-        self.frame.update_log([("network: " + " ".join(self.classifier_data)), ml_package, state_package, response_package])
+        self.frame.update_log([{"classifier": " ".join(self.classifier_data), "character": self.character.character_name}, ml_package, state_package])
         self.frame.update_diagrams(state_package.get("emotional_state"), state_package.get("emotional_history"))
 
     # corrects user input
@@ -128,6 +133,9 @@ class Controller:
         self.config.set("net", "classifier_type", self.classifier_data[0])
         self.config.set("net", "dataset", self.classifier_data[1])
         self.config.set("net", "feature_set", self.classifier_data[2])
+        # save nlp model
+        print("saving spacy")
+        self.nlp.to_disk("../models/spacy")
         # save new value in file
         with open("../config/config.ini", "w") as f:
             self.config.write(f)

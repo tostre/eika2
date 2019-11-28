@@ -17,6 +17,7 @@ class Character:
         self.result = 0
 
         # in the case of the first launch, load default values, else load previous state
+        self.character_name = ""
         self.load("character_default") if first_launch else self.load("character_saved")
 
     # loads character variables from a npz file
@@ -26,23 +27,24 @@ class Character:
         self.np_load_old = np.load
         np.load = lambda *a, **k: self.np_load_old(*a, allow_pickle=True, **k)
         # load characters and values
-        self.character_npz = np.load("../characters/" + file + ".npz")
-        self.trait_values = self.character_npz.get("trait_values")
-        self.max_values = self.character_npz.get("max_values")
-        self.emotional_state = self.character_npz.get("emotional_state")
-        self.emotional_history = self.character_npz.get("emotional_history")
-        self.empathy_functions = self.character_npz.get("empathy_functions")
-        self.decay_modifiers = self.character_npz.get("decay_modifiers")
-        self.state_modifiers = self.character_npz.get("state_modifiers_values")
-        self.state_modifiers_threshold = self.character_npz.get("state_modifiers_threshold")
-        self.delta_function = self.character_npz.get("delta_function")
-        self.relationship_status = self.character_npz.get("relationship_status").item()
+        character_npz = np.load("../characters/" + file + ".npz")
+        self.trait_values = character_npz.get("trait_values")
+        self.max_values = character_npz.get("max_values")
+        self.emotional_state = character_npz.get("emotional_state")
+        self.emotional_history = character_npz.get("emotional_history")
+        self.empathy_functions = character_npz.get("empathy_functions")
+        self.decay_modifiers = character_npz.get("decay_modifiers")
+        self.state_modifiers = character_npz.get("state_modifiers_values")
+        self.state_modifiers_threshold = character_npz.get("state_modifiers_threshold")
+        self.delta_function = character_npz.get("delta_function")
+        self.relationship_status = character_npz.get("relationship_status").item()
         # In den Dateien format.py und npyio.py des NumbyModules habe ich allow_pickles=True
         # gesetzt. Andernfalls wird hier ein Fehler geworfen
-        self.relationship_modifiers = self.character_npz.get("relationship_modifiers").item()
+        self.relationship_modifiers = character_npz.get("relationship_modifiers").item()
 
         self.logger.info(f"Session start. {file} loaded")
         np.load = self.np_load_old
+        self.character_name = file
 
     # saves the current character in a npz file
     def save(self):
@@ -93,7 +95,7 @@ class Character:
         return {
             "emotional_state": self.emotional_state,
             "emotional_history": self.emotional_history,
-            "highest emotion": np.argmax(self.emotional_state),
+            "highest_emotion": np.argmax(self.emotional_state),
             "highest_score": max(self.emotional_state)}
 
     # Returns value of modifier based on the interaction function between two emotions
