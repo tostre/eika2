@@ -54,7 +54,7 @@ class Controller:
         # initialize ml-variables
         if self.config.getboolean("default", "firstlaunch"):
             # das md-model ist ca 80mb, das lg ca 1g
-            #self.nlp = spacy.load("en_core_web_lg")
+            # self.nlp = spacy.load("en_core_web_lg")
             self.nlp = spacy.load("en_core_web_md")
         else:
             self.nlp = spacy.load("../models/spacy")

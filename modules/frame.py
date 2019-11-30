@@ -72,7 +72,8 @@ class Frame:
                                               command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_emotion", feature_set="lex"))
         self.load_neural_net_menu.add_command(label="Load Tweet (Full)",
                                               command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="full"))
-        self.load_neural_net_menu.add_command(label="Load Tweet (Lex)", command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="lex"))
+        self.load_neural_net_menu.add_command(label="Load Tweet (Lex)",
+                                              command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="lex"))
         self.load_neural_net_menu.add_command(label="Load Tweet (Topics)",
                                               command=lambda: self.forward_user_intent(intent="change_classifier", classifier_type="net", dataset="norm_tweet", feature_set="topics"))
         # create debug
@@ -154,7 +155,7 @@ class DiagramManager:
         self.time_plot1, self.time_plot2, self.time_plot3, self.time_plot4, self.time_plot5 = (None, None, None, None, None)
         self.bar_plot = None
         # init figure and subplots/axes
-        self.fig = matplotlib.figure.Figure(figsize=(4,2))
+        self.fig = matplotlib.figure.Figure(figsize=(4, 2))
         self.ax3 = self.fig.add_subplot(211)
         self.ax4 = self.fig.add_subplot(212)
         # create diagrams according to the visible diagrams
